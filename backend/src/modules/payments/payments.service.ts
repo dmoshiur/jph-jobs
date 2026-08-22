@@ -53,6 +53,23 @@ export async function handleWebhook(provider: string, headers: Record<string, un
       if (order.purpose === 'SUBSCRIPTION' && order.package?.durationDays) {
         await tx.subscription.create({ data: { userId: order.userId, packageId: order.package.id, startsAt: new Date(), endsAt: new Date(Date.now() + order.package.durationDays * 86400000) } });
       }
+      if (order.purpose === 'JOB_PACKAGE') {
+        const jobId = (order.metadata as { jobId?: string } | null)?.jobId;
+        if (jobId) {
+          // Activate/publish the job and link the purchased package. Idempotent: only act when not already published.
+          const job = await tx.job.findUnique({ where: { id: jobId } });
+          if (job && job.status !== 'PUBLISHED' && job.status !== 'APPROVED') {
+            const durationDays = order.package?.durationDays ?? 30;
+            const deadline = job.deadline ?? new Date(Date.now() + durationDays * 86400000);
+            await tx.job.update({
+              where: { id: jobId },
+              data: { status: 'PUBLISHED', packageId: order.packageId ?? job.packageId, publishedAt: new Date(), expiresAt: new Date(Math.min(deadline.getTime(), Date.now() + durationDays * 86400000)) }
+            });
+          } else if (job && order.packageId && job.packageId !== order.packageId) {
+            await tx.job.update({ where: { id: jobId }, data: { packageId: order.packageId } });
+          }
+        }
+      }
       await tx.notification.create({ data: { userId: order.userId, type: 'PAYMENT', title: 'Payment successful', body: 'Your payment has been verified.', data: { paymentId: payment.id, orderId: order.id } } });
       await tx.auditLog.create({ data: { action: 'payments.webhook.success', resource: 'payments', resourceId: payment.id, newValue: verified as object } });
     }

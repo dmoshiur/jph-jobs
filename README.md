@@ -1,6 +1,24 @@
-# JPH Jobs — Hyper-local Jobs, Companies & Business Platform
+# JOBHUB — Bogura & Joypurhat Jobs Platform
 
-JPH Jobs is a production-oriented two-application architecture for a local job marketplace initially focused on Bogura and Joypurhat, Bangladesh.
+JOBHUB is a production-ready, Bangla-first, two-application job marketplace for
+Bogura and Joypurhat, Bangladesh — candidates, employers/companies and local
+businesses on a professional dense job-portal UX, backed by a trusted API.
+
+## What's included
+
+- **Frontend (Next.js 15, Netlify):** blue design system, desktop multi-level header +
+  dedicated mobile header/drawer + bottom nav, search hero with autocomplete, live
+  stats, location chips, categories, featured/hot/latest jobs, companies directory,
+  job details with JobPosting schema, candidate & employer dashboards, multi-step job
+  posting, packages, and a full multi-admin SaaS backend UI.
+- **Backend (Express + Prisma, Vercel):** auth (JWT + rotating refresh + CSRF),
+  RBAC (candidate/employer/super-admin/root-admin), jobs/companies/businesses,
+  applications + saved jobs + alerts, packages/orders/payments/invoices with
+  idempotent webhook verification and job auto-activation, reports/reviews/ads,
+  notifications, CMS/settings, comprehensive admin endpoints, audit logs, and a
+  seed for Bogura & Joypurhat locations, categories, skills and packages.
+
+See [`docs/PRODUCTION.md`](docs/PRODUCTION.md) for deployment, security and the API surface.
 
 ## Mandatory split
 

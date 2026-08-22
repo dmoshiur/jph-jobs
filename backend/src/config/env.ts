@@ -22,6 +22,7 @@ const schema = z.object({
   PAYMENT_SECRET: z.string().optional(),
   PAYMENT_WEBHOOK_SECRET: z.string().optional(),
   PAYMENT_BASE_URL: z.string().optional(),
+  BACKEND_PUBLIC_URL: z.string().url().optional(),
   CRON_SECRET: z.string().default('dev-cron-secret'),
   ROOT_ADMIN_EMAIL: z.string().email().default('root@jphjobs.local'),
   ROOT_ADMIN_PASSWORD: z.string().min(12).default('ChangeMeStrong123!')
