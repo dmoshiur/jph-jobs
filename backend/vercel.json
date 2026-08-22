@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "npm run prisma:generate && npm run build",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.ts" }
+  ],
+  "crons": [
+    { "path": "/api/v1/cron/expire-jobs", "schedule": "0 * * * *" },
+    { "path": "/api/v1/cron/payment-reconciliation", "schedule": "*/30 * * * *" }
+  ]
+}
