@@ -16,6 +16,6 @@ candidatesRouter.patch('/me', requireRole('candidate'), validate(updateSchema), 
 candidatesRouter.get('/me/cv', requireRole('candidate'), asyncHandler(async (req, res) => {
   const profile = await prisma.candidateProfile.findUnique({ where: { userId: req.user!.id } });
   if (!profile?.cvObjectKey) throw new ApiError(404, 'CV not uploaded');
-  // Generate a signed URL from configured storage provider here.
-  return ok(res, { objectKey: profile.cvObjectKey, downloadUrl: null, message: 'Storage adapter must generate a signed URL in production.' }, 'Authorized CV reference');
+  const { cloudinaryUrl } = await import('../../firebase/cloudinary.js');
+  return ok(res, { objectKey: profile.cvObjectKey, downloadUrl: cloudinaryUrl(profile.cvObjectKey) }, 'Authorized CV reference');
 }));

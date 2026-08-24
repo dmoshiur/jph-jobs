@@ -1,72 +1,28 @@
 /**
- * Database seed for JPH Jobs.
+ * Firestore seed for JPH Jobs (no SQL — runs against Cloud Firestore).
  *
  * Idempotent: safe to run multiple times. Creates:
- *  - roles + permissions (candidate, employer, super-admin, root-admin)
- *  - the root admin account from ROOT_ADMIN_EMAIL / ROOT_ADMIN_PASSWORD
+ *  - roles + permissions (candidate, employer, shop-owner, super-admin, root-admin)
+ *  - the root admin (Firebase Auth + Firestore) from ROOT_ADMIN_EMAIL / PASSWORD
  *  - locations for Bogura & Joypurhat (districts + upazilas)
  *  - job categories, skills and job packages
+ *  - core site settings
  *  - a small amount of demo content (only when SEED_DEMO=1)
  *
  * Run: npm run seed
+ * Requires Firebase credentials (see .env.example) or the Firestore emulator.
  */
-import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../src/database/prisma.js';
 import { slugify } from '../src/utils/slug.js';
 import { env } from '../src/config/env.js';
+import { bootstrap } from '../src/config/bootstrap.js';
+import { createAuthUser } from '../src/auth/user.js';
 
-const prisma = new PrismaClient();
-
-const PERMISSIONS = [
-  'analytics.view',
-  'users.view', 'users.edit',
-  'jobs.view', 'jobs.create', 'jobs.edit', 'jobs.approve', 'jobs.delete',
-  'companies.view', 'companies.create', 'companies.edit', 'companies.verify',
-  'businesses.view', 'businesses.create', 'businesses.edit', 'businesses.verify',
-  'applications.view', 'applications.create', 'applications.edit', 'applications.own',
-  'candidates.view', 'candidates.edit',
-  'packages.view', 'packages.edit',
-  'payments.view', 'payments.refund',
-  'advertisements.view', 'advertisements.edit',
-  'categories.view', 'categories.edit',
-  'locations.view', 'locations.edit',
-  'skills.view', 'skills.edit',
-  'reports.view', 'reports.edit',
-  'reviews.view', 'reviews.edit',
-  'notifications.view', 'notifications.edit',
-  'cms.view', 'cms.edit',
-  'settings.view', 'settings.edit',
-  'admins.view', 'admins.create', 'admins.edit', 'admins.delete',
-  'audit_logs.view'
-] as const;
-
-const ROLES: Record<string, string[]> = {
-  candidate: ['applications.create', 'applications.own', 'jobs.view', 'companies.view', 'businesses.view'],
-  employer: [
-    'jobs.create', 'jobs.edit', 'companies.create', 'companies.edit',
-    'applications.view', 'applications.edit',
-    'businesses.create', 'businesses.edit',
-    'packages.view', 'payments.view'
-  ],
-  'shop-owner': [
-    'jobs.create', 'jobs.edit', 'companies.create', 'companies.edit',
-    'applications.view', 'applications.edit',
-    'businesses.create', 'businesses.edit',
-    'packages.view', 'payments.view'
-  ],
-  // super-admin gets everything except root-only actions; root-admin bypasses checks in middleware.
-  'super-admin': PERMISSIONS.filter((p) => p !== 'admins.delete').map((p) => p)
-};
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const DISTRICTS = [
-  {
-    name: 'Bogura', bnName: 'বগুড়া',
-    upazilas: ['Bogura Sadar', 'Shajahanpur', 'Sherpur', 'Shibganj', 'Kahaloo', 'Nandigram', 'Dhunat', 'Dhupchanchia', 'Adamdighi', 'Sonatala', 'Sariakandi', 'Gabtali']
-  },
-  {
-    name: 'Joypurhat', bnName: 'জয়পুরহাট',
-    upazilas: ['Joypurhat Sadar', 'Panchbibi', 'Akkelpur', 'Khetlal', 'Kalai']
-  }
+  { name: 'Bogura', upazilas: ['Bogura Sadar', 'Shajahanpur', 'Sherpur', 'Shibganj', 'Kahaloo', 'Nandigram', 'Dhunat', 'Dhupchanchia', 'Adamdighi', 'Sonatala', 'Sariakandi', 'Gabtali'] },
+  { name: 'Joypurhat', upazilas: ['Joypurhat Sadar', 'Panchbibi', 'Akkelpur', 'Khetlal', 'Kalai'] }
 ];
 
 const CATEGORIES = [
@@ -84,113 +40,35 @@ const SKILLS = [
 ];
 
 const PACKAGES = [
-  {
-    name: 'Free', slug: 'free', type: 'JOB' as const, price: 0, durationDays: 15, sortOrder: 1,
-    features: [['tier', 'FREE'], ['active_days', '15'], ['featured', '0'], ['hot', '0'], ['applicants', 'Unlimited']]
-  },
-  {
-    name: 'Basic', slug: 'basic', type: 'JOB' as const, price: 49900, durationDays: 30, sortOrder: 2,
-    features: [['tier', 'BASIC'], ['active_days', '30'], ['featured', '0'], ['hot', '0'], ['applicants', 'Unlimited']]
-  },
-  {
-    name: 'Featured', slug: 'featured', type: 'JOB' as const, price: 149900, durationDays: 30, sortOrder: 3,
-    features: [['tier', 'FEATURED'], ['active_days', '30'], ['featured', '1'], ['hot', '0'], ['applicants', 'Unlimited'], ['homepage', '1']]
-  },
-  {
-    name: 'Hot / Urgent', slug: 'hot', type: 'JOB' as const, price: 249900, durationDays: 30, sortOrder: 4,
-    features: [['tier', 'HOT'], ['active_days', '30'], ['featured', '1'], ['hot', '1'], ['applicants', 'Unlimited'], ['homepage', '1'], ['urgent_badge', '1']]
-  },
-  {
-    name: 'Employer Monthly', slug: 'employer-monthly', type: 'SUBSCRIPTION' as const, price: 99900, durationDays: 30, sortOrder: 10,
-    features: [['job_posts', '10'], ['featured_jobs', '2'], ['company_verified', '1']]
-  }
+  { name: 'Free', slug: 'free', type: 'JOB', price: 0, durationDays: 15, sortOrder: 1, features: [['tier', 'FREE'], ['active_days', '15'], ['featured', '0'], ['hot', '0'], ['applicants', 'Unlimited']] },
+  { name: 'Basic', slug: 'basic', type: 'JOB', price: 49900, durationDays: 30, sortOrder: 2, features: [['tier', 'BASIC'], ['active_days', '30'], ['featured', '0'], ['hot', '0'], ['applicants', 'Unlimited']] },
+  { name: 'Featured', slug: 'featured', type: 'JOB', price: 149900, durationDays: 30, sortOrder: 3, features: [['tier', 'FEATURED'], ['active_days', '30'], ['featured', '1'], ['hot', '0'], ['applicants', 'Unlimited'], ['homepage', '1']] },
+  { name: 'Hot / Urgent', slug: 'hot', type: 'JOB', price: 249900, durationDays: 30, sortOrder: 4, features: [['tier', 'HOT'], ['active_days', '30'], ['featured', '1'], ['hot', '1'], ['applicants', 'Unlimited'], ['homepage', '1'], ['urgent_badge', '1']] },
+  { name: 'Employer Monthly', slug: 'employer-monthly', type: 'SUBSCRIPTION', price: 99900, durationDays: 30, sortOrder: 10, features: [['job_posts', '10'], ['featured_jobs', '2'], ['company_verified', '1']] }
 ];
 
-async function upsertRole(slug: string, permissionKeys: string[]) {
-  const role = await prisma.role.upsert({
-    where: { slug },
-    update: { description: `${slug} role` },
-    create: { name: slug.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' '), slug, system: true, description: `${slug} role` }
-  });
-  if (permissionKeys.length) {
-    const perms = await prisma.permission.findMany({ where: { key: { in: permissionKeys } } });
-    await Promise.all(perms.map((p: { id: string }) => prisma.rolePermission.upsert({
-      where: { roleId_permissionId: { roleId: role.id, permissionId: p.id } },
-      update: {},
-      create: { roleId: role.id, permissionId: p.id }
-    })));
-  }
-  return role;
-}
-
 async function seed() {
-  console.log('Seeding roles & permissions...');
-  await Promise.all(PERMISSIONS.map((key) => prisma.permission.upsert({
-    where: { key }, update: { description: key }, create: { key, description: key }
-  })));
-
-  for (const [slug, perms] of Object.entries(ROLES)) {
-    await upsertRole(slug, perms);
-  }
-  // root-admin role exists for completeness; middleware short-circuits for it.
-  await upsertRole('root-admin', PERMISSIONS as unknown as string[]);
-
-  console.log('Seeding root admin...');
-  const rootRole = await prisma.role.findUniqueOrThrow({ where: { slug: 'root-admin' } });
-  const rootPasswordHash = await bcrypt.hash(env.ROOT_ADMIN_PASSWORD, 12);
-  const root = await prisma.user.upsert({
-    where: { email: env.ROOT_ADMIN_EMAIL },
-    update: { passwordHash: rootPasswordHash, status: 'ACTIVE', emailVerifiedAt: new Date() },
-    create: { name: 'Root Admin', email: env.ROOT_ADMIN_EMAIL, passwordHash: rootPasswordHash, status: 'ACTIVE', emailVerifiedAt: new Date() }
-  });
-  await prisma.userRole.upsert({
-    where: { userId_roleId: { userId: root.id, roleId: rootRole.id } },
-    update: {},
-    create: { userId: root.id, roleId: rootRole.id }
-  });
+  console.log('Bootstrapping roles, permissions and root admin...');
+  await bootstrap();
 
   console.log('Seeding locations...');
-  const country = await prisma.location.upsert({
-    where: { slug: 'bangladesh' },
-    update: {},
-    create: { name: 'Bangladesh', slug: 'bangladesh', type: 'COUNTRY' }
-  });
-  const division = await prisma.location.upsert({
-    where: { slug: 'rajshahi' },
-    update: {},
-    create: { name: 'Rajshahi', slug: 'rajshahi', type: 'DIVISION', parentId: country.id }
-  });
+  const country = await prisma.location.upsert({ where: { slug: 'bangladesh' }, update: {}, create: { name: 'Bangladesh', slug: 'bangladesh', type: 'COUNTRY' } });
+  const division = await prisma.location.upsert({ where: { slug: 'rajshahi' }, update: {}, create: { name: 'Rajshahi', slug: 'rajshahi', type: 'DIVISION', parentId: country.id } });
   for (const district of DISTRICTS) {
-    const d = await prisma.location.upsert({
-      where: { slug: slugify(district.name) },
-      update: { parentId: division.id },
-      create: { name: district.name, slug: slugify(district.name), type: 'DISTRICT', parentId: division.id }
-    });
+    const d = await prisma.location.upsert({ where: { slug: slugify(district.name) }, update: { parentId: division.id }, create: { name: district.name, slug: slugify(district.name), type: 'DISTRICT', parentId: division.id } });
     for (const u of district.upazilas) {
-      await prisma.location.upsert({
-        where: { slug: slugify(`${district.name}-${u}`) },
-        update: { parentId: d.id },
-        create: { name: u, slug: slugify(`${district.name}-${u}`), type: 'UPAZILA', parentId: d.id }
-      });
+      await prisma.location.upsert({ where: { slug: slugify(`${district.name}-${u}`) }, update: { parentId: d.id }, create: { name: u, slug: slugify(`${district.name}-${u}`), type: 'UPAZILA', parentId: d.id } });
     }
   }
 
   console.log('Seeding categories...');
   for (const name of CATEGORIES) {
-    await prisma.jobCategory.upsert({
-      where: { slug: slugify(name) },
-      update: { name },
-      create: { name, slug: slugify(name) }
-    });
+    await prisma.jobCategory.upsert({ where: { slug: slugify(name) }, update: { name }, create: { name, slug: slugify(name) } });
   }
 
   console.log('Seeding skills...');
   for (const name of SKILLS) {
-    await prisma.skill.upsert({
-      where: { slug: slugify(name) },
-      update: { name },
-      create: { name, slug: slugify(name) }
-    });
+    await prisma.skill.upsert({ where: { slug: slugify(name) }, update: { name }, create: { name, slug: slugify(name) } });
   }
 
   console.log('Seeding packages...');
@@ -201,17 +79,17 @@ async function seed() {
       create: { name: pkg.name, slug: pkg.slug, type: pkg.type, price: pkg.price, durationDays: pkg.durationDays, sortOrder: pkg.sortOrder, isActive: true }
     });
     const existing = await prisma.packageFeature.findMany({ where: { packageId: created.id } });
-    await Promise.all(pkg.features.map(async ([key, value]) => {
-      const found = existing.find((f: { key: string; value: string; id: string }) => f.key === key);
+    for (const [key, value] of pkg.features) {
+      const found = existing.find((f: any) => f.key === key);
       if (found) {
         if (found.value !== value) await prisma.packageFeature.update({ where: { id: found.id }, data: { value } });
       } else {
         await prisma.packageFeature.create({ data: { packageId: created.id, key, value } });
       }
-    }));
+    }
   }
 
-  // Core site settings
+  console.log('Seeding site settings...');
   const defaults: Record<string, unknown> = {
     site_name: 'JOBHUB',
     site_tagline: "Bogura & Joypurhat's Local Jobs & Business Platform",
@@ -222,11 +100,11 @@ async function seed() {
     employer_requires_approval: true
   };
   for (const [key, value] of Object.entries(defaults)) {
-    await prisma.setting.upsert({ where: { key }, update: { value: value as object }, create: { key, value: value as object } });
+    await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
   }
 
   if (process.env.SEED_DEMO === '1') {
-    console.log('Seeding demo content (set SEED_DEMO=1)...');
+    console.log('Seeding demo content (SEED_DEMO=1)...');
     await seedDemo();
   }
 
@@ -234,8 +112,6 @@ async function seed() {
 }
 
 async function seedDemo() {
-  const employerRole = await prisma.role.findUniqueOrThrow({ where: { slug: 'employer' } });
-  const candidateRole = await prisma.role.findUniqueOrThrow({ where: { slug: 'candidate' } });
   const bogura = await prisma.location.findFirstOrThrow({ where: { slug: 'bogura', type: 'DISTRICT' } });
   const joypurhat = await prisma.location.findFirstOrThrow({ where: { slug: 'joypurhat', type: 'DISTRICT' } });
   const categories = await prisma.jobCategory.findMany();
@@ -249,17 +125,19 @@ async function seedDemo() {
   ];
 
   for (const e of employers) {
-    const passwordHash = await bcrypt.hash('DemoPass123', 12);
-    const user = await prisma.user.upsert({
-      where: { email: e.email },
-      update: {},
-      create: { name: e.name, email: e.email, passwordHash, status: 'ACTIVE', emailVerifiedAt: new Date() }
-    });
-    await prisma.userRole.upsert({ where: { userId_roleId: { userId: user.id, roleId: employerRole.id } }, update: {}, create: { userId: user.id, roleId: employerRole.id } });
+    let user = await prisma.user.findFirst({ where: { email: e.email } });
+    if (!user) {
+      user = await createAuthUser({ name: e.name, email: e.email, password: 'DemoPass123', roleSlugs: ['employer'], status: 'ACTIVE', emailVerified: true }) as any;
+    }
     const company = await prisma.company.upsert({
       where: { slug: slugify(e.name) },
-      update: { ownerId: user.id, verificationStatus: 'VERIFIED', category: e.category, districtId: bogura.id },
-      create: { ownerId: user.id, name: e.name, slug: slugify(e.name), verificationStatus: 'VERIFIED', category: e.category, districtId: bogura.id, about: `${e.name} is a local employer in Bogura.`, members: { create: { userId: user.id, role: 'owner' } } }
+      update: { ownerId: user!.id, verificationStatus: 'VERIFIED', category: e.category, districtId: bogura.id },
+      create: { ownerId: user!.id, name: e.name, slug: slugify(e.name), verificationStatus: 'VERIFIED', category: e.category, districtId: bogura.id, about: `${e.name} is a local employer in Bogura.` }
+    });
+    await prisma.companyMember.upsert({
+      where: { companyId_userId: { companyId: company.id, userId: user!.id } },
+      update: {},
+      create: { companyId: company.id, userId: user!.id, role: 'owner', title: 'Owner' }
     });
 
     const titles = ['Sales Executive', 'Accountant', 'Store Manager', 'Field Officer', 'Customer Support'];
@@ -269,7 +147,7 @@ async function seedDemo() {
       if (await prisma.job.findUnique({ where: { slug } })) continue;
       await prisma.job.create({
         data: {
-          creatorId: user.id, companyId: company.id,
+          creatorId: user!.id, companyId: company.id,
           categoryId: categories[i % categories.length].id,
           title, slug, type: i % 3 === 0 ? 'PART_TIME' : 'FULL_TIME',
           vacancy: 1 + (i % 3),
@@ -287,17 +165,14 @@ async function seedDemo() {
     }
   }
 
-  // One candidate
-  const candPasswordHash = await bcrypt.hash('DemoPass123', 12);
-  const candidate = await prisma.user.upsert({
-    where: { email: 'candidate@test.test' },
-    update: {},
-    create: { name: 'Demo Candidate', email: 'candidate@test.test', passwordHash: candPasswordHash, status: 'ACTIVE', emailVerifiedAt: new Date() }
-  });
-  await prisma.userRole.upsert({ where: { userId_roleId: { userId: candidate.id, roleId: candidateRole.id } }, update: {}, create: { userId: candidate.id, roleId: candidateRole.id } });
-  await prisma.candidateProfile.upsert({ where: { userId: candidate.id }, update: {}, create: { userId: candidate.id, title: 'Sales Professional', summary: 'Looking for work in Bogura.' } });
+  const candEmail = 'candidate@test.test';
+  let candidate = await prisma.user.findFirst({ where: { email: candEmail } });
+  if (!candidate) {
+    candidate = await createAuthUser({ name: 'Demo Candidate', email: candEmail, password: 'DemoPass123', roleSlugs: ['candidate'], status: 'ACTIVE', emailVerified: true, createCandidateProfile: true }) as any;
+  }
+  await prisma.candidateProfile.upsert({ where: { userId: candidate!.id }, update: {}, create: { userId: candidate!.id, title: 'Sales Professional', summary: 'Looking for work in Bogura.' } });
 }
 
 seed()
-  .catch((error) => { console.error('Seed failed:', error); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+  .then(async () => { await prisma.$disconnect(); process.exit(0); })
+  .catch(async (error) => { console.error('Seed failed:', error); await prisma.$disconnect(); process.exit(1); });

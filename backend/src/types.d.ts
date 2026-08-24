@@ -1,5 +1,3 @@
-import type { UserStatus } from '@prisma/client';
-
 declare global {
   namespace Express {
     interface Request {
@@ -7,7 +5,7 @@ declare global {
         id: string;
         email: string;
         name: string;
-        status: UserStatus;
+        status: string;
         roles: string[];
         permissions: string[];
         sessionId?: string;

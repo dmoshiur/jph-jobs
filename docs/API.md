@@ -18,16 +18,28 @@ Production stack traces are never returned.
 
 ## Auth
 
+Authentication is handled by **Firebase Auth**. Clients sign in with the Firebase Web SDK
+(email/password or Google), then send the Firebase **ID token** as
+`Authorization: Bearer <token>` on every request. The backend verifies the token and
+resolves roles/permissions from Firestore.
+
 | Method | Endpoint | Auth | Description |
 |---|---|---:|---|
-| POST | `/auth/register` | No | Register candidate/employer-ready user |
-| POST | `/auth/login` | No | Login and set secure cookies |
-| POST | `/auth/logout` | Yes | Revoke current session and clear cookies |
-| POST | `/auth/refresh` | Refresh cookie | Rotate refresh token |
-| GET | `/auth/me` | Yes | Current user, roles, permissions |
-| POST | `/auth/forgot-password` | No | Create reset token and dispatch email job |
-| POST | `/auth/reset-password` | No | Reset password by token |
-| POST | `/auth/verify-email` | No | Verify email token |
+| POST | `/auth/register` | No | Create the account server-side and assign the RBAC role (candidate/employer/shop-owner) |
+| POST | `/auth/session` | Yes (Bearer) | Record login + ensure the Firestore user document is provisioned |
+| POST | `/auth/logout` | Yes (Bearer) | No-op server-side (client calls Firebase `signOut`) |
+| GET | `/auth/me` | Yes (Bearer) | Current user, roles, permissions, memberships, companies |
+| POST | `/auth/forgot-password` | No | Issue a Firebase password-reset link |
+
+Login, token refresh, email verification and password reset are performed by the Firebase
+Web SDK on the client — there are no server login/refresh/verify endpoints.
+
+## Storage (Cloudinary)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---:|---|
+| POST | `/storage/sign` | Yes (Bearer) | Mint signed params for a direct client→Cloudinary upload |
+| GET | `/storage/url` | Yes (Bearer) | Resolve a stored `public_id` to a delivery URL |
 
 ## Jobs
 

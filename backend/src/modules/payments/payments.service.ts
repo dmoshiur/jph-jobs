@@ -70,7 +70,8 @@ export async function handleWebhook(provider: string, headers: Record<string, un
           }
         }
       }
-      await tx.notification.create({ data: { userId: order.userId, type: 'PAYMENT', title: 'Payment successful', body: 'Your payment has been verified.', data: { paymentId: payment.id, orderId: order.id } } });
+      const { createNotification } = await import('../notifications/notifications.service.js');
+      await createNotification({ userId: order.userId, type: 'PAYMENT', title: 'Payment successful', body: 'Your payment has been verified.', data: { paymentId: payment.id, orderId: order.id } });
       await tx.auditLog.create({ data: { action: 'payments.webhook.success', resource: 'payments', resourceId: payment.id, newValue: verified as object } });
     }
     return { payment, duplicate: false };

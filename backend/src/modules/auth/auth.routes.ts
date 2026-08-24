@@ -3,15 +3,17 @@ import { requireAuth } from '../../middleware/auth.js';
 import { authRateLimit } from '../../middleware/security.js';
 import { validate } from '../../middleware/validate.js';
 import * as controller from './auth.controller.js';
-import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, verifyEmailSchema } from './auth.validators.js';
+import { forgotPasswordSchema, registerSchema } from './auth.validators.js';
 
 export const authRouter = Router();
 
+// Account creation is server-owned so the correct RBAC role is assigned.
 authRouter.post('/register', authRateLimit, validate(registerSchema), controller.register);
-authRouter.post('/login', authRateLimit, validate(loginSchema), controller.login);
-authRouter.post('/refresh', controller.refresh);
+
+// Firebase-authenticated endpoints (client supplies the ID token as Bearer).
+authRouter.post('/session', requireAuth, controller.session);
 authRouter.post('/logout', requireAuth, controller.logout);
 authRouter.get('/me', requireAuth, controller.me);
+
+// Password reset link issued via Firebase Admin.
 authRouter.post('/forgot-password', authRateLimit, validate(forgotPasswordSchema), controller.forgotPassword);
-authRouter.post('/reset-password', authRateLimit, validate(resetPasswordSchema), controller.resetPassword);
-authRouter.post('/verify-email', validate(verifyEmailSchema), controller.verifyEmail);

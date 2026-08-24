@@ -23,7 +23,7 @@ export function applySecurity(app: Express) {
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
   app.use(compression());
-  app.use(cookieParser(env.COOKIE_SECRET));
+  app.use(cookieParser());
   app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 500, standardHeaders: 'draft-7', legacyHeaders: false }));
 }
 

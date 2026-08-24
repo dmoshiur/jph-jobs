@@ -1,20 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { api } from '@/services/api';
+import { useNotifications } from '@/hooks/useNotifications';
 import { timeAgo } from '@/lib/format';
-import type { Notification } from '@/types/api';
 
 export default function NotificationsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [items, setItems] = useState<Notification[]>([]);
+  const { items, markRead } = useNotifications(user?.id);
 
   useEffect(() => {
     if (!loading && !user) router.push('/auth/login?next=/notifications');
-    if (user) api.get<Notification[]>('/notifications').then(setItems).catch(() => undefined);
   }, [user, loading, router]);
 
   return (
@@ -23,7 +21,8 @@ export default function NotificationsPage() {
       <div className="panel card-pad" style={{ padding: 0 }}>
         {items.length === 0 ? <div className="state"><div className="state-icon">🔔</div><p>কোনো নোটিফিকেশন নেই</p></div>
           : items.map((n) => (
-            <div key={n.id} style={{ padding: 14, borderBottom: '1px solid var(--border)', background: n.readAt ? '#fff' : 'var(--primary-50)' }}>
+            <div key={n.id} onClick={() => !n.readAt && markRead(n.id)}
+              style={{ padding: 14, borderBottom: '1px solid var(--border)', background: n.readAt ? '#fff' : 'var(--primary-50)', cursor: n.readAt ? 'default' : 'pointer' }}>
               <div style={{ fontWeight: 700 }}>{n.title}</div>
               <div className="text-sm muted" style={{ marginBottom: 4 }}>{n.body}</div>
               <div className="text-xs muted">{timeAgo(n.createdAt)}</div>
