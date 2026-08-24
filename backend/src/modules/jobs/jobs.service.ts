@@ -3,6 +3,7 @@ import { prisma } from '../../database/prisma.js';
 import { ApiError, ForbiddenError } from '../../utils/errors.js';
 import { slugify } from '../../utils/slug.js';
 import { resolveTier } from './job-tier.js';
+import { canPostJobs, canViewApplications } from '../companies/ranks.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const JOB_INCLUDE = {
@@ -242,7 +243,9 @@ export async function getApplicants(userId: string, jobId: string) {
   const job = await prisma.job.findUnique({ where: { id: jobId }, include: { company: true } });
   if (!job) throw new ApiError(404, 'Job not found');
   const isMember = await prisma.companyMember.findFirst({ where: { companyId: job.companyId, userId } });
-  if (job.creatorId !== userId && job.company.ownerId !== userId && !isMember) throw new ForbiddenError('Not allowed');
+  const rank = isMember?.role ?? (job.company.ownerId === userId ? 'owner' : job.creatorId === userId ? 'owner' : null);
+  if (!rank) throw new ForbiddenError('Not allowed');
+  if (!canViewApplications(rank) && job.creatorId !== userId) throw new ForbiddenError('Your rank cannot view applicants');
   return prisma.application.findMany({
     where: { jobId },
     include: { candidate: { select: { id: true, name: true, email: true, phone: true, candidateProfile: true } } },

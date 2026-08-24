@@ -8,7 +8,7 @@ export const registerSchema = z.object({
     email: z.string().email().toLowerCase(),
     phone: z.string().min(6).max(30).optional(),
     password,
-    accountType: z.enum(['candidate', 'employer']).default('candidate')
+    accountType: z.enum(['candidate', 'employer', 'shop-owner']).default('candidate')
   })
 });
 

@@ -29,7 +29,7 @@ function LoginForm() {
     <div className="auth-wrap">
       <div className="auth-card panel">
         <div className="center" style={{ marginBottom: 18 }}>
-          <div className="logo" style={{ justifyContent: 'center' }}><span className="logo-mark">JH</span> JOBHUB</div>
+          <div className="logo" style={{ justifyContent: 'center' }}><span className="logo-mark">jh</span> jobhub</div>
           <h1 style={{ fontSize: '1.4rem', marginTop: 14 }}>আবার স্বাগতম</h1>
           <p className="muted">আপনার অ্যাকাউন্টে লগইন করুন</p>
         </div>

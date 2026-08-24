@@ -33,7 +33,7 @@ export default function CandidateDashboard() {
 
   if (loading || !user) return <div className="container section"><LoadingRows /></div>;
 
-  const isEmployer = user.roles.includes('employer');
+  const isEmployer = user.roles.some((r) => ['employer', 'shop-owner'].includes(r));
   const isAdmin = user.roles.some((r) => ['root-admin', 'super-admin'].includes(r));
   const stats = {
     applications: applications.length,

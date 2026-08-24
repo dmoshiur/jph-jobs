@@ -37,7 +37,7 @@ export default function PostJobPage() {
     if (!loading && !user) router.push('/auth/login?next=/dashboard/employer/jobs/new');
     if (!user) return;
     Promise.all([
-      api.get<Company[]>('/companies').catch(() => ({ items: [] })).then((r: any) => r.items ?? r),
+      api.get<Company[]>('/companies/mine').catch(() => []),
       api.get<Category[]>('/public/categories'),
       api.get<{ districts: Location[] }>('/public/locations?popular=true').then((r) => r.districts),
       api.get<PackagePlan[]>('/packages')

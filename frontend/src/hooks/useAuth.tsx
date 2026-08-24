@@ -8,7 +8,7 @@ interface AuthContextValue {
   user?: CurrentUser;
   loading: boolean;
   login(email: string, password: string): Promise<void>;
-  register(input: { name: string; email: string; password: string; accountType: 'candidate' | 'employer' }): Promise<void>;
+  register(input: { name: string; email: string; password: string; accountType: 'candidate' | 'employer' | 'shop-owner' }): Promise<void>;
   logout(): Promise<void>;
   hasPermission(permission: string): boolean;
 }

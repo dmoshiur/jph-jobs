@@ -43,7 +43,33 @@ export const logout = asyncHandler(async (req, res) => {
   return ok(res, null, 'Logged out');
 });
 
-export const me = asyncHandler(async (req, res) => ok(res, { user: req.user }, 'Current user'));
+export const me = asyncHandler(async (req, res) => {
+  const { prisma } = await import('../../database/prisma.js');
+  const { permissionsForRank } = await import('../companies/ranks.js');
+  const memberships = await prisma.companyMember.findMany({
+    where: { userId: req.user!.id },
+    include: { company: { select: { id: true, name: true, slug: true, verificationStatus: true, category: true } } }
+  });
+  const owned = await prisma.company.findMany({
+    where: { ownerId: req.user!.id },
+    select: { id: true, name: true, slug: true, verificationStatus: true, category: true }
+  });
+  const mapped = memberships.map((m: any) => ({
+    id: m.id,
+    companyId: m.companyId,
+    rank: m.role,
+    title: m.title,
+    permissions: m.permissions?.length ? m.permissions : permissionsForRank(m.role),
+    company: m.company
+  }));
+  return ok(res, {
+    user: {
+      ...req.user,
+      memberships: mapped,
+      companies: owned
+    }
+  }, 'Current user');
+});
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   await service.forgotPassword(req.body.email);
