@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton';
 
 function LoginForm() {
   const router = useRouter();
@@ -34,6 +35,8 @@ function LoginForm() {
           <p className="muted">আপনার অ্যাকাউন্টে লগইন করুন</p>
         </div>
         {error && <div className="alert alert-error">{error}</div>}
+        <GoogleButton label="Google দিয়ে লগইন করুন" />
+        <AuthDivider />
         <form onSubmit={submit} className="form" style={{ maxWidth: '100%' }}>
           <label className="field">
             <span className="label">ইমেইল</span>

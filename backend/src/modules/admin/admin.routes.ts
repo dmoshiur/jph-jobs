@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
 import { prisma } from '../../database/prisma.js';
+import { createAuthUser } from '../../auth/user.js';
 import { requireAuth, requirePermission } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/async-handler.js';
 import { created, ok } from '../../utils/api-response.js';
 import { ApiError, ForbiddenError } from '../../utils/errors.js';
 import { audit } from '../audit/audit.service.js';
+import { createNotification, createNotifications } from '../notifications/notifications.service.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth);
@@ -59,6 +60,9 @@ adminRouter.patch('/users/:id/status', requirePermission('users.edit'),
     const target = await prisma.user.findUniqueOrThrow({ where: { id: req.params.id }, include: { roles: { include: { role: true } } } });
     if (target.roles.some((ur: any) => ur.role.slug === 'root-admin') && !req.user!.roles.includes('root-admin')) throw new ForbiddenError('Only Root Admin can modify Root Admin');
     const user = await prisma.user.update({ where: { id: req.params.id }, data: { status: req.body.status } });
+    // Mirror the account state in Firebase Auth (disabled users cannot sign in).
+    const { firebaseAuth } = await import('../../firebase/admin.js');
+    await firebaseAuth().updateUser(user.id, { disabled: ['SUSPENDED', 'DISABLED'].includes(req.body.status) }).catch(() => undefined);
     await audit(req, { action: 'users.status', resource: 'users', resourceId: user.id, oldValue: { status: target.status }, newValue: { status: user.status } });
     return ok(res, user, 'User status updated');
   }));
@@ -85,9 +89,7 @@ adminRouter.patch('/jobs/:id/status', requirePermission('jobs.approve'),
       where: { id: req.params.id },
       data: { status: req.body.status, publishedAt: publishing && !old.publishedAt ? new Date() : old.publishedAt }
     });
-    await prisma.notification.create({
-      data: { userId: job.creatorId, type: 'JOB', title: publishing ? 'আপনার চাকরি প্রকাশিত হয়েছে' : 'চাকরির স্ট্যাটাস আপডেট', body: `আপনার "${job.title}" চাকরিটি ${publishing ? 'অনুমোদিত ও প্রকাশিত' : req.body.status} হয়েছে।`, data: { jobId: job.id, status: req.body.status } }
-    });
+    await createNotification({ userId: job.creatorId, type: 'JOB', title: publishing ? 'আপনার চাকরি প্রকাশিত হয়েছে' : 'চাকরির স্ট্যাটাস আপডেট', body: `আপনার "${job.title}" চাকরিটি ${publishing ? 'অনুমোদিত ও প্রকাশিত' : req.body.status} হয়েছে।`, data: { jobId: job.id, status: req.body.status } });
     await audit(req, { action: 'jobs.status', resource: 'jobs', resourceId: job.id, oldValue: { status: old.status }, newValue: { status: job.status } });
     return ok(res, job, 'Job status updated');
   }));
@@ -110,9 +112,7 @@ adminRouter.patch('/companies/:id/verification', requirePermission('companies.ve
   asyncHandler(async (req, res) => {
     const old = await prisma.company.findUniqueOrThrow({ where: { id: req.params.id } });
     const company = await prisma.company.update({ where: { id: req.params.id }, data: { verificationStatus: req.body.verificationStatus } });
-    await prisma.notification.create({
-      data: { userId: company.ownerId, type: 'COMPANY', title: 'কোম্পানি ভেরিফিকেশন আপডেট', body: `আপনার কোম্পানি "${company.name}"-${req.body.verificationStatus === 'VERIFIED' ? 'ভেরিফাইড হয়েছে' : 'স্ট্যাটাস আপডেট হয়েছে'}।`, data: { companyId: company.id, status: req.body.verificationStatus } }
-    });
+    await createNotification({ userId: company.ownerId, type: 'COMPANY', title: 'কোম্পানি ভেরিফিকেশন আপডেট', body: `আপনার কোম্পানি "${company.name}"-${req.body.verificationStatus === 'VERIFIED' ? 'ভেরিফাইড হয়েছে' : 'স্ট্যাটাস আপডেট হয়েছে'}।`, data: { companyId: company.id, status: req.body.verificationStatus } });
     await audit(req, { action: 'companies.verify', resource: 'companies', resourceId: company.id, oldValue: { verificationStatus: old.verificationStatus }, newValue: { verificationStatus: company.verificationStatus } });
     return ok(res, company, 'Company verification updated');
   }));
@@ -229,7 +229,14 @@ adminRouter.post('/admins/super-admins', requirePermission('admins.create'),
     if (!role) throw new ApiError(500, 'Super Admin role not seeded');
     const exists = await prisma.user.findUnique({ where: { email: req.body.email.toLowerCase() } });
     if (exists) throw new ApiError(409, 'Email already in use');
-    const user = await prisma.user.create({ data: { name: req.body.name, email: req.body.email.toLowerCase(), passwordHash: await bcrypt.hash(req.body.password, 12), status: 'ACTIVE', roles: { create: { roleId: role.id } } } });
+    const user = await createAuthUser({
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password,
+      roleSlugs: ['super-admin'],
+      status: 'ACTIVE',
+      emailVerified: true
+    });
     await audit(req, { action: 'admins.create_super_admin', resource: 'users', resourceId: user.id, newValue: { email: user.email } });
     return created(res, { id: user.id, email: user.email, name: user.name }, 'Super Admin created');
   }));
@@ -239,6 +246,8 @@ adminRouter.delete('/admins/:id', requirePermission('admins.delete'), asyncHandl
   const target = await prisma.user.findUniqueOrThrow({ where: { id: req.params.id }, include: { roles: { include: { role: true } } } });
   if (target.roles.some((ur: any) => ur.role.slug === 'root-admin')) throw new ForbiddenError('Root Admin cannot be deleted');
   await prisma.user.update({ where: { id: target.id }, data: { status: 'DISABLED' } });
+  const { firebaseAuth } = await import('../../firebase/admin.js');
+  await firebaseAuth().updateUser(target.id, { disabled: true }).catch(() => undefined);
   await audit(req, { action: 'admins.disable', resource: 'users', resourceId: target.id });
   return ok(res, null, 'Admin disabled');
 }));
@@ -274,7 +283,7 @@ adminRouter.post('/notifications/broadcast', requirePermission('notifications.ed
   asyncHandler(async (req, res) => {
     const roleSlug = req.body.audience === 'candidates' ? 'candidate' : req.body.audience === 'employers' ? 'employer' : null;
     const users = await prisma.user.findMany({ where: roleSlug ? { roles: { some: { role: { slug: roleSlug } } }, status: 'ACTIVE' } : { status: 'ACTIVE' }, select: { id: true } });
-    await prisma.notification.createMany({ data: users.map((u: { id: string }) => ({ userId: u.id, type: 'ADMIN', title: req.body.title, body: req.body.body })) });
+    await createNotifications(users.map((u: { id: string }) => ({ userId: u.id, type: 'ADMIN' as const, title: req.body.title, body: req.body.body })));
     await audit(req, { action: 'notifications.broadcast', resource: 'notifications', newValue: { audience: req.body.audience, count: users.length } });
     return created(res, { sent: users.length }, 'Broadcast sent');
   }));

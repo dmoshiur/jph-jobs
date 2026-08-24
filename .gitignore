@@ -10,4 +10,10 @@ coverage/
 *.log
 *.tsbuildinfo
 .DS_Store
-.prisma/
+# Firebase local artifacts
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+serviceAccountKey.json
+serviceAccount*.json

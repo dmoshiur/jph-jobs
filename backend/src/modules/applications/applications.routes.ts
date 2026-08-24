@@ -7,6 +7,7 @@ import { asyncHandler } from '../../utils/async-handler.js';
 import { created, ok } from '../../utils/api-response.js';
 import { ApiError, ForbiddenError } from '../../utils/errors.js';
 import { audit } from '../audit/audit.service.js';
+import { createNotification, createNotifications } from '../notifications/notifications.service.js';
 
 const APP_INCLUDE = {
   job: { include: { company: { include: { district: true, upazila: true } }, category: true, district: true, upazila: true } },
@@ -59,12 +60,10 @@ applicationsRouter.post('/', requireAnyPermission(['applications.create']), vali
     include: APP_INCLUDE
   });
 
-  await prisma.notification.createMany({
-    data: [
-      { userId: req.user!.id, type: 'APPLICATION', title: 'আবেদন জমা হয়েছে', body: `আপনার "${job.title}" পদে আবেদন সফলভাবে জমা হয়েছে।`, data: { applicationId: application.id, jobId: job.id } },
-      { userId: job.company.ownerId, type: 'APPLICATION', title: 'নতুন আবেদন', body: `"${job.title}" পদে একজন নতুন প্রার্থী আবেদন করেছেন।`, data: { applicationId: application.id, jobId: job.id } }
-    ]
-  });
+  await createNotifications([
+    { userId: req.user!.id, type: 'APPLICATION', title: 'আবেদন জমা হয়েছে', body: `আপনার "${job.title}" পদে আবেদন সফলভাবে জমা হয়েছে।`, data: { applicationId: application.id, jobId: job.id } },
+    { userId: job.company.ownerId, type: 'APPLICATION', title: 'নতুন আবেদন', body: `"${job.title}" পদে একজন নতুন প্রার্থী আবেদন করেছেন।`, data: { applicationId: application.id, jobId: job.id } }
+  ]);
 
   return created(res, application, 'Application submitted');
 }));
@@ -89,9 +88,7 @@ applicationsRouter.patch('/:id/status', requireAnyPermission(['applications.edit
     SELECTED: 'অভিনন্দন! আপনি নির্বাচিত হয়েছেন',
     REJECTED: 'আপনার আবেদনটি বিবেচনা করা হয়নি'
   };
-  await prisma.notification.create({
-    data: { userId: old.candidateUserId, type: 'APPLICATION', title: 'আবেদনের আপডেট', body: labels[req.body.status] ?? 'আপনার আবেদনের অবস্থা পরিবর্তন হয়েছে।', data: { applicationId: old.id, jobId: old.jobId, status: req.body.status } }
-  });
+  await createNotification({ userId: old.candidateUserId, type: 'APPLICATION', title: 'আবেদনের আপডেট', body: labels[req.body.status] ?? 'আপনার আবেদনের অবস্থা পরিবর্তন হয়েছে।', data: { applicationId: old.id, jobId: old.jobId, status: req.body.status } });
   await audit(req, { action: 'applications.status', resource: 'applications', resourceId: application.id, oldValue: { status: old.status }, newValue: { status: application.status } });
   return ok(res, application, 'Application updated');
 }));

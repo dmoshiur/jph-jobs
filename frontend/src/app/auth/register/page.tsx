@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton';
 
 type AccountType = 'candidate' | 'employer' | 'shop-owner';
 
@@ -25,8 +26,8 @@ function RegisterForm() {
     setLoading(true); setError(''); setSuccess('');
     try {
       await register(form);
-      setSuccess('নিবন্ধন সফল! লগইন করুন।');
-      setTimeout(() => router.push('/auth/login'), 1200);
+      setSuccess('নিবন্ধন সফল! আপনাকে লগইন করানো হচ্ছে…');
+      setTimeout(() => router.push('/dashboard'), 800);
     } catch (err) { setError(err instanceof Error ? err.message : 'নিবন্ধন ব্যর্থ'); }
     finally { setLoading(false); }
   }
@@ -60,6 +61,9 @@ function RegisterForm() {
 
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
+
+        <GoogleButton label="Google দিয়ে নিবন্ধন করুন" />
+        <AuthDivider />
 
         <form onSubmit={submit} className="form" style={{ maxWidth: '100%' }}>
           <label className="field"><span className="label">পূর্ণ নাম</span><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} /></label>

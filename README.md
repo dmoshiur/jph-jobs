@@ -11,12 +11,15 @@ businesses on a professional dense job-portal UX, backed by a trusted API.
   stats, location chips, categories, featured/hot/latest jobs, companies directory,
   job details with JobPosting schema, candidate & employer dashboards, multi-step job
   posting, packages, and a full multi-admin SaaS backend UI.
-- **Backend (Express + Prisma, Vercel):** auth (JWT + rotating refresh + CSRF),
-  RBAC (candidate/employer/super-admin/root-admin), jobs/companies/businesses,
-  applications + saved jobs + alerts, packages/orders/payments/invoices with
-  idempotent webhook verification and job auto-activation, reports/reviews/ads,
-  notifications, CMS/settings, comprehensive admin endpoints, audit logs, and a
-  seed for Bogura & Joypurhat locations, categories, skills and packages.
+- **Backend (Express + Firebase, Vercel):** authentication via **Firebase Auth**
+  (email/password + Google), backend ID-token verification, RBAC
+  (candidate/employer/super-admin/root-admin) stored in **Cloud Firestore**,
+  jobs/companies/businesses, applications + saved jobs + alerts,
+  packages/orders/payments/invoices with idempotent webhook verification and job
+  auto-activation, reports/reviews/ads, **live notifications via Realtime
+  Database**, **Cloudinary** image/CV storage, CMS/settings, comprehensive admin
+  endpoints, audit logs, and a Firestore seed for Bogura & Joypurhat locations,
+  categories, skills and packages. No SQL/PostgreSQL/Prisma anywhere.
 
 See [`docs/PRODUCTION.md`](docs/PRODUCTION.md) for deployment, security and the API surface.
 
@@ -27,9 +30,9 @@ frontend/  → Netlify-hosted Next.js client application
 backend/   → Vercel-hosted trusted API application
 ```
 
-The frontend never connects to PostgreSQL, never contains backend controllers, never verifies payments, and never stores private secrets. It communicates with the backend only through `NEXT_PUBLIC_API_URL`.
+The frontend never contains backend controllers, never verifies payments, and never holds admin secrets. It signs users in with the Firebase Web SDK and communicates with the backend through `NEXT_PUBLIC_API_URL`, sending the Firebase ID token as a Bearer credential.
 
-The backend is the only trusted service. It owns authentication, RBAC, database access, payments, webhooks, audit logs, file authorization, and admin operations.
+The backend is the only trusted service. It verifies Firebase ID tokens and owns RBAC, Firestore access, payments, webhooks, audit logs, Cloudinary upload authorization, and admin operations.
 
 ## Local development
 
@@ -39,15 +42,17 @@ The backend is the only trusted service. It owns authentication, RBAC, database 
 cd backend
 cp .env.example .env
 npm install
-npm run prisma:generate
-npm run prisma:migrate
+# Fill in FIREBASE_* and CLOUDINARY_* in .env (or point at the Firebase emulator),
+# then seed reference data into Firestore:
 npm run seed
 npm run dev
 ```
 
 Backend default: `http://localhost:3001/api/v1`
 
-Required local backend variables are in `backend/.env.example`. Use a managed PostgreSQL database or a local PostgreSQL instance.
+Required local backend variables are in `backend/.env.example`. Provide a Firebase
+service account (or use the Firebase Emulator Suite) and a Cloudinary account.
+Firestore is schemaless — there are no migrations to run.
 
 ### 2. Frontend
 
@@ -64,9 +69,16 @@ Frontend default: `http://localhost:3000`
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+# Firebase Web SDK config (public by design)
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://your-project-default-rtdb.firebaseio.com
 ```
 
-Only public browser-safe variables may use `NEXT_PUBLIC_`.
+Only public browser-safe variables may use `NEXT_PUBLIC_`. Enable the Email/Password
+and Google providers in the Firebase console.
 
 ## Production deployment
 

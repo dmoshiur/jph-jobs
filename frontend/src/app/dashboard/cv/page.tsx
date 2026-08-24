@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
+import { uploadToCloudinary } from '@/services/upload';
 import { useToast } from '@/components/ui/Toast';
 
 export default function CVBuilderPage() {
@@ -12,6 +13,23 @@ export default function CVBuilderPage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>({ title: '', summary: '', expectedSalary: '', yearsExperience: '', educationLevel: '' });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadCv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await uploadToCloudinary(file, 'cv');
+      await api.patch('/candidates/me', { cvObjectKey: result.publicId });
+      setProfile((p: any) => ({ ...p, cvObjectKey: result.publicId }));
+      toast('সিভি আপলোড হয়েছে', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'আপলোড ব্যর্থ', 'error');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) router.push('/auth/login?next=/dashboard/cv');
@@ -47,7 +65,13 @@ export default function CVBuilderPage() {
         <div className="flex gap-2">
           <button className="btn" onClick={save} disabled={saving}>{saving ? 'সংরক্ষণ হচ্ছে…' : 'সংরক্ষণ করুন'}</button>
         </div>
-        <p className="form-help mt-4">📄 সিভি আপলোড ও পিডিএফ ডাউনলোড ফিচারটি সংযুক্ত স্টোরেজ অ্যাডাপ্টারের মাধ্যমে কাজ করবে (প্রোডাকশনে S3/R2)।</p>
+        <div className="field mt-4">
+          <span className="label">সিভি আপলোড (PDF/DOC)</span>
+          <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={uploadCv} disabled={uploading} />
+          {uploading && <span className="form-help">আপলোড হচ্ছে…</span>}
+          {profile.cvObjectKey && !uploading && <span className="form-help">✅ সিভি সংযুক্ত আছে</span>}
+        </div>
+        <p className="form-help mt-4">📄 সিভি ও ছবি Cloudinary-তে নিরাপদে সংরক্ষিত হয়।</p>
       </div>
     </div>
   );

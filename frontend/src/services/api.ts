@@ -2,11 +2,6 @@ import type { ApiResponse } from '@/types/api';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
-function getCookie(name: string) {
-  if (typeof document === 'undefined') return undefined;
-  return document.cookie.split('; ').find((row) => row.startsWith(`${name}=`))?.split('=').slice(1).join('=');
-}
-
 export class ApiError extends Error {
   status: number;
   errors: unknown;
@@ -17,17 +12,23 @@ export class ApiError extends Error {
   }
 }
 
-interface ApiOptions extends RequestInit { skipCsrf?: boolean; _retry?: boolean }
+interface ApiOptions extends RequestInit { auth?: boolean; _retry?: boolean }
 
-let refreshPromise: Promise<boolean> | null = null;
-async function refreshSession(): Promise<boolean> {
-  if (!refreshPromise) {
-    refreshPromise = fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
-      .then((r) => r.ok)
-      .catch(() => false)
-      .finally(() => { setTimeout(() => { refreshPromise = null; }, 0); });
+/**
+ * Resolve the current Firebase ID token (if signed in). Loaded lazily so this
+ * module stays usable in server components that only hit public endpoints.
+ */
+async function getIdToken(forceRefresh = false): Promise<string | undefined> {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const { firebaseAuth, isFirebaseConfigured } = await import('./firebase');
+    if (!isFirebaseConfigured()) return undefined;
+    const user = firebaseAuth().currentUser;
+    if (!user) return undefined;
+    return await user.getIdToken(forceRefresh);
+  } catch {
+    return undefined;
   }
-  return refreshPromise;
 }
 
 async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
@@ -35,19 +36,16 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const method = options.method ?? 'GET';
   const headers = new Headers(options.headers);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (!options.skipCsrf && !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
-    const csrf = getCookie('csrfToken');
-    if (csrf) headers.set('X-CSRF-Token', decodeURIComponent(csrf));
-  }
 
-  let response = await fetch(url, { ...options, method, headers, credentials: 'include' });
+  // Attach the Firebase ID token as a Bearer credential.
+  const token = await getIdToken(options._retry);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  // Attempt one silent token refresh on 401.
-  if (response.status === 401 && !options._retry && method.toUpperCase() !== 'POST' && !path.includes('/auth/')) {
-    const ok = await refreshSession();
-    if (ok) {
-      return request<T>(path, { ...options, _retry: true });
-    }
+  const response = await fetch(url, { ...options, method, headers });
+
+  // On 401, force-refresh the token once and retry (handles expiry).
+  if (response.status === 401 && !options._retry && token) {
+    return request<T>(path, { ...options, _retry: true });
   }
 
   let payload: ApiResponse<T>;

@@ -19,6 +19,7 @@ import { alertsRouter } from '../modules/alerts/alerts.routes.js';
 import { reviewsRouter } from '../modules/reviews/reviews.routes.js';
 import { advertisementsRouter } from '../modules/advertisements/advertisements.routes.js';
 import { skillsRouter } from '../modules/skills/skills.routes.js';
+import { storageRouter } from '../modules/storage/storage.routes.js';
 import { ok } from '../utils/api-response.js';
 
 export const apiRouter = Router();
@@ -41,6 +42,7 @@ apiRouter.use('/payments', paymentsRouter);
 apiRouter.use('/locations', locationsRouter);
 apiRouter.use('/skills', skillsRouter);
 apiRouter.use('/notifications', notificationsRouter);
+apiRouter.use('/storage', storageRouter);
 apiRouter.use('/cms', cmsRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/cron', cronRouter);
