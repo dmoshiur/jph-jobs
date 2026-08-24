@@ -48,6 +48,12 @@ const ROLES: Record<string, string[]> = {
     'businesses.create', 'businesses.edit',
     'packages.view', 'payments.view'
   ],
+  'shop-owner': [
+    'jobs.create', 'jobs.edit', 'companies.create', 'companies.edit',
+    'applications.view', 'applications.edit',
+    'businesses.create', 'businesses.edit',
+    'packages.view', 'payments.view'
+  ],
   // super-admin gets everything except root-only actions; root-admin bypasses checks in middleware.
   'super-admin': PERMISSIONS.filter((p) => p !== 'admins.delete').map((p) => p)
 };

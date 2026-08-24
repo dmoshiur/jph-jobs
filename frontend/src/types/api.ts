@@ -2,6 +2,15 @@ export interface ApiSuccess<T> { success: true; message: string; data: T }
 export interface ApiFailure { success: false; message: string; errors: unknown }
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
+export interface CompanyMembership {
+  id: string;
+  companyId: string;
+  rank: string;
+  title?: string | null;
+  permissions: string[];
+  company: { id: string; name: string; slug: string; verificationStatus: string; category?: string | null };
+}
+
 export interface CurrentUser {
   id: string;
   name: string;
@@ -10,6 +19,8 @@ export interface CurrentUser {
   status?: string;
   roles: string[];
   permissions: string[];
+  memberships?: CompanyMembership[];
+  companies?: { id: string; name: string; slug: string; verificationStatus: string; category?: string | null }[];
 }
 
 export interface Location {

@@ -11,11 +11,11 @@ export function publicUser(user: { id: string; name: string; email: string; phon
   return { id: user.id, name: user.name, email: user.email, phone: user.phone, status: user.status, emailVerifiedAt: user.emailVerifiedAt };
 }
 
-export async function register(input: { name: string; email: string; phone?: string; password: string; accountType: 'candidate' | 'employer' }) {
+export async function register(input: { name: string; email: string; phone?: string; password: string; accountType: 'candidate' | 'employer' | 'shop-owner' }) {
   const exists = await prisma.user.findFirst({ where: { OR: [{ email: input.email }, ...(input.phone ? [{ phone: input.phone }] : [])] } });
   if (exists) throw new ApiError(409, 'User already exists');
 
-  const roleSlug = input.accountType === 'employer' ? 'employer' : 'candidate';
+  const roleSlug = input.accountType === 'employer' ? 'employer' : input.accountType === 'shop-owner' ? 'shop-owner' : 'candidate';
   const passwordHash = await bcrypt.hash(input.password, 12);
 
   return prisma.$transaction(async (tx: any) => {

@@ -36,8 +36,8 @@ export default function EmployerDashboard() {
     <div className="container" style={{ padding: '22px 0' }}>
       <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
         <div>
-          <h1 style={{ fontSize: '1.5rem' }}>এমপ্লয়ার ড্যাশবোর্ড</h1>
-          <p className="muted mb-0">স্বাগতম, {user.name}</p>
+          <h1 style={{ fontSize: '1.5rem' }}>{user.roles.includes('shop-owner') ? 'দোকান ড্যাশবোর্ড' : 'এমপ্লয়ার ড্যাশবোর্ড'}</h1>
+          <p className="muted mb-0">স্বাগতম, {user.name}{user.memberships?.[0] ? ` · ${user.memberships[0].rank.toUpperCase()}` : ''}</p>
         </div>
         <Link href="/dashboard/employer/jobs/new" className="btn"><IconPlus width={16} height={16} /> নতুন চাকরি পোস্ট করুন</Link>
       </div>
@@ -83,7 +83,8 @@ export default function EmployerDashboard() {
           <h3 style={{ margin: 0 }}>দ্রুত অ্যাকশন</h3>
           <Link href="/dashboard/employer/jobs/new" className="btn btn-secondary"><IconPlus width={15} height={15} /> নতুন চাকরি</Link>
           <Link href="/dashboard/employer/packages" className="btn btn-secondary"><IconMoney width={15} height={15} /> প্যাকেজ ও পেমেন্ট</Link>
-          <Link href="/dashboard/employer/profile" className="btn btn-secondary">কোম্পানি প্রোফাইল</Link>
+          <Link href="/dashboard/employer/profile" className="btn btn-secondary">কোম্পানি / দোকান প্রোফাইল</Link>
+          <Link href="/dashboard/employer/team" className="btn btn-secondary">টিম ও র‍্যাঙ্ক (MD/GM/AGM)</Link>
           <Link href="/dashboard" className="btn btn-ghost">← প্রার্থী ড্যাশবোর্ড</Link>
         </aside>
       </div>

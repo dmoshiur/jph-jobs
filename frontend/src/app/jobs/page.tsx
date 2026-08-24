@@ -184,7 +184,7 @@ function Filters({
       <div className="filter-group">
         <h4>লোকেশন</h4>
         <select value={filters.location} onChange={(e) => setFilter({ location: e.target.value })}>
-          <option value="">সব লোকেশন</option>
+          <option value="">বগুড়া ও জয়পুরহাট</option>
           {locations.map((d) => (
             <optgroup key={d.id} label={d.name}>
               <option value={d.slug}>{d.name} (সব)</option>
