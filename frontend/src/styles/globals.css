@@ -2145,3 +2145,44 @@ table.table tr:last-child td { border-bottom: none; }
     align-items: flex-start;
   }
 }
+
+/* Back to top button */
+.bdj-back-to-top {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bdj-blue);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity .3s, visibility .3s, transform .3s, background .15s;
+}
+
+.bdj-back-to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.bdj-back-to-top:hover { background: var(--bdj-blue-dark); }
+
+.bdj-back-to-top:focus-visible {
+  outline: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .15), 0 0 0 3px rgba(0, 102, 204, .35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bdj-back-to-top { transition: opacity .3s, visibility .3s; transform: none; }
+  .bdj-back-to-top.is-visible { transform: none; }
+}

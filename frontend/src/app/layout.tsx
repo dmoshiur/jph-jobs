@@ -5,6 +5,7 @@ import { LangProvider } from '@/hooks/useLang';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ToastProvider } from '@/components/ui/Toast';
+import { BackToTop } from '@/components/ui/BackToTop';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.jobhub.com.bd';
 
@@ -137,31 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </LangProvider>
         
         {/* Back to top button */}
-        <button 
-          id="back-to-top" 
-          className="bdj-back-to-top"
-          aria-label="Back to top"
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: 'var(--bdj-blue)',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'none',
-            zIndex: 100,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            fontSize: '24px',
-            transition: 'opacity 0.3s, visibility 0.3s',
-          }}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        >
-          ↑
-        </button>
+        <BackToTop />
         
         {/* Live chat widget placeholder */}
         <div id="live-chat-widget" style={{ position: 'fixed', bottom: '20px', right: '80px', zIndex: 100 }} />
