@@ -14,7 +14,7 @@ export function JobCard({ job, compact = false }: { job: Job; compact?: boolean 
   const { toast } = useToast();
   const featured = job.tier === 'FEATURED' || job.tier === 'HOT';
   const hot = job.tier === 'HOT';
-  const location = [job.upazila?.name, job.district?.name].filter(Boolean).join(', ') || job.location || 'Bangladesh';
+  const location = [job.upazila?.name, job.district?.name].filter(Boolean).join(', ') || 'Bangladesh';
 
   async function toggleSave(e: React.MouseEvent) {
     e.preventDefault();
@@ -71,7 +71,6 @@ export function JobCard({ job, compact = false }: { job: Job; compact?: boolean 
         <div className="job-badges">
           {hot && <span className="badge badge-hot">HOT</span>}
           {featured && !hot && <span className="badge badge-featured">FEATURED</span>}
-          {job.tier === 'PREMIUM' && <span className="badge badge-blue">PREMIUM</span>}
         </div>
       </div>
 
@@ -85,7 +84,9 @@ export function JobCard({ job, compact = false }: { job: Job; compact?: boolean 
             </span>
           )}
           {job.experience && <span><IconBriefcase width={14} height={14} /> {job.experience}</span>}
-          {job.salary && <span><IconMoney width={14} height={14} /> {formatSalary(job)}</span>}
+          {(job.salaryText || job.salaryMin || job.salaryMax) && (
+            <span><IconMoney width={14} height={14} /> {formatSalary(job)}</span>
+          )}
         </div>
       )}
 

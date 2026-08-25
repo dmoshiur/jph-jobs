@@ -13,8 +13,12 @@ export function HomeHero({ stats, locations = [] }: { stats: PublicStats; locati
   const { t } = useLang();
   
   // Get popular locations with job counts
-  const popularLocations = locations.length
-    ? locations.slice(0, 8)
+  const popularLocations: { name: string; slug: string; count: number }[] = locations.length
+    ? locations.slice(0, 8).map((l) => ({
+        name: l.name,
+        slug: l.slug,
+        count: l._count?.districtJobs ?? 0,
+      }))
     : [
         { name: 'Dhaka', slug: 'dhaka', count: 0 },
         { name: 'Chattogram', slug: 'chattogram', count: 0 },
@@ -88,7 +92,7 @@ export function HomeHero({ stats, locations = [] }: { stats: PublicStats; locati
       {/* Discover Jobs Section - Exact bdjobs.com */}
       <section className="container section-tight">
         <div className="bdj-discover">
-          <h2>{t.discoverJobs || 'Discover Jobs Across Popular Category & Industry'}</h2>
+          <h2>{t.discover || 'Discover Jobs Across Popular Category & Industry'}</h2>
         </div>
       </section>
     </>
