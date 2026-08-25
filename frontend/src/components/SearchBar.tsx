@@ -51,7 +51,7 @@ export function SearchBar({ locations = [], variant = 'hero' }: { locations?: Lo
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder={t.searchPh}
+          placeholder={t.searchPh || 'Job title, skill or company'}
           aria-label={t.search}
         />
         {open && suggest && (suggest.jobs.length || suggest.companies.length || suggest.categories.length) > 0 && (

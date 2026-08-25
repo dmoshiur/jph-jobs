@@ -27,7 +27,7 @@ export const COPY = {
     
     // Search
     search: 'Search',
-    searchPh: 'Job title, skill or company',
+    searchPh: 'Search jobs by title, skill or company',
     allLocations: 'All Locations',
     
     // Quick Links

@@ -1,2 +1,11 @@
-export const metadata={title:'সাহায্য'};
-export default function Help(){return <div className="container section" style={{maxWidth:760}}><h1>সাহায্য ও সহায়তা</h1><div className="panel card-pad"><h3>প্রার্থীদের জন্য</h3><p>ফ্রি অ্যাকাউন্ট খুলুন, প্রোফাইল সম্পূর্ণ করুন এবং পছন্দের চাকরিতে আবেদন করুন।</p><h3>নিয়োগদাতাদের জন্য</h3><p>কোম্পানি প্রোফাইল তৈরি করে চাকরি পোস্ট করুন এবং আবেদনকারীদের তালিকা পরিচালনা করুন।</p><p>যোগাযোগ: support@jobhub.test · ০৯৬১২-xxx-xxx</p></div></div>;}
+import { CmsPage } from '@/components/cms/CmsPage';
+
+export const metadata = { title: 'Help' };
+
+export default function Help() {
+  return (
+    <CmsPage title="Help">
+      <p>Need any support? Call <strong>16479</strong>, 09638 666 444 or 01897 627 858 (9 am to 8 pm, Sat to Thurs).</p>
+    </CmsPage>
+  );
+}

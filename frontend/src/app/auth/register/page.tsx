@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton';
+import { GoogleButton } from '@/components/auth/GoogleButton';
+import { Logo } from '@/components/brand/Logo';
 
 type AccountType = 'candidate' | 'employer' | 'shop-owner';
 
@@ -26,57 +26,43 @@ function RegisterForm() {
     setLoading(true); setError(''); setSuccess('');
     try {
       await register(form);
-      setSuccess('নিবন্ধন সফল! আপনাকে লগইন করানো হচ্ছে…');
+      setSuccess('Account created. Taking you in…');
       setTimeout(() => router.push('/dashboard'), 800);
-    } catch (err) { setError(err instanceof Error ? err.message : 'নিবন্ধন ব্যর্থ'); }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Sign up failed'); }
     finally { setLoading(false); }
   }
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-card panel">
-        <div className="center" style={{ marginBottom: 18 }}>
-          <div className="logo" style={{ justifyContent: 'center' }}><span className="logo-mark">jh</span> jobhub</div>
-          <h1 style={{ fontSize: '1.4rem', marginTop: 14 }}>অ্যাকাউন্ট তৈরি করুন</h1>
-          <p className="muted">বগুড়া ও জয়পুরহাটের চাকরি প্ল্যাটফর্ম</p>
-        </div>
+    <div className="bdj-auth-page">
+      <div className="bdj-auth-card">
+        <div className="bdj-auth-brand"><Logo /></div>
+        <h1>Create account</h1>
+        <p className="bdj-auth-sub">Access all of jobhub services</p>
 
-        <div className="account-toggle" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-          {([
-            { id: 'candidate' as const, label: 'প্রার্থী' },
-            { id: 'employer' as const, label: 'কোম্পানি' },
-            { id: 'shop-owner' as const, label: 'দোকান' }
-          ]).map((opt) => (
-            <button key={opt.id} type="button" onClick={() => setForm({ ...form, accountType: opt.id })}
-              className={form.accountType === opt.id ? 'btn' : 'btn btn-secondary'}>
-              {opt.label}
-            </button>
-          ))}
+        <div className="bdj-role-tabs">
+          <button type="button" className={form.accountType === 'candidate' ? 'on' : ''} onClick={() => setForm({ ...form, accountType: 'candidate' })}>Job Seeker</button>
+          <button type="button" className={form.accountType !== 'candidate' ? 'on' : ''} onClick={() => setForm({ ...form, accountType: 'employer' })}>Recruiter</button>
         </div>
-        <p className="text-sm muted">
-          {form.accountType === 'candidate' && 'চাকরি খুঁজুন ও আবেদন করুন।'}
-          {form.accountType === 'employer' && 'কোম্পানি খুলুন, MD/GM/AGM/DM/ACM র‍্যাঙ্ক দিন, চাকরি পোস্ট করুন।'}
-          {form.accountType === 'shop-owner' && 'দোকানের সেটিংস পরিচালনা করুন এবং চাকরি পোস্ট করুন।'}
-        </p>
 
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
-        <GoogleButton label="Google দিয়ে নিবন্ধন করুন" />
-        <AuthDivider />
-
-        <form onSubmit={submit} className="form" style={{ maxWidth: '100%' }}>
-          <label className="field"><span className="label">পূর্ণ নাম</span><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} /></label>
-          <label className="field"><span className="label">ইমেইল</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
-          <label className="field"><span className="label">মোবাইল (ঐচ্ছিক)</span><input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="01XXXXXXXXX" /></label>
+        <form onSubmit={submit}>
+          <label className="field"><span className="label">Full Name</span><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} /></label>
+          <label className="field"><span className="label">Email</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+          <label className="field"><span className="label">Mobile No</span><input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="01XXXXXXXXX" /></label>
           <label className="field">
-            <span className="label">পাসওয়ার্ড</span>
+            <span className="label">Password</span>
             <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
-            <span className="form-help">কমপক্ষে ৮ অক্ষর, একটি বড় হাতের অক্ষর ও একটি সংখ্যা</span>
+            <span className="form-help">At least 8 characters, one uppercase letter and one number</span>
           </label>
-          <button className="btn btn-block btn-lg" disabled={loading}>{loading ? 'তৈরি হচ্ছে…' : 'অ্যাকাউন্ট তৈরি করুন'}</button>
+          <button className="btn btn-block btn-lg" disabled={loading}>{loading ? 'Creating…' : 'Sign Up'}</button>
         </form>
-        <p className="center text-sm muted mt-4 mb-0">ইতিমধ্যে অ্যাকাউন্ট আছে? <Link href="/auth/login" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>লগইন করুন</Link></p>
+        <div className="bdj-or">Or</div>
+        <GoogleButton label="Continue with Google" />
+        <p className="center text-sm muted mt-4 mb-0">
+          Already have an account? <Link href="/auth/login" style={{ color: 'var(--bdj-blue)', fontWeight: 700 }}>Sign In</Link>
+        </p>
       </div>
     </div>
   );
