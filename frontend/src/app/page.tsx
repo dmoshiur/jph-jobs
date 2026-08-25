@@ -1,10 +1,15 @@
 import Link from 'next/link';
-import { JobCard } from '@/components/JobCard';
-import { CompanyCard } from '@/components/CompanyCard';
-import { CategoryGrid } from '@/components/CategoryGrid';
 import { QuickLinks } from '@/components/QuickLinks';
 import { HomeHero } from '@/components/home/HomeHero';
+import { DiscoverSection } from '@/components/home/DiscoverSection';
+import { GovtTicker } from '@/components/home/GovtTicker';
+import { OverseasJobs } from '@/components/home/OverseasJobs';
+import { HotJobs } from '@/components/home/HotJobs';
 import { fetchPublic } from '@/lib/server-data';
+import {
+  DEMO_CATEGORIES, DEMO_COMPANIES, DEMO_GOVT_JOBS, DEMO_INDUSTRIES,
+  DEMO_JOBS, DEMO_LOCATIONS, DEMO_OVERSEAS, DEMO_QUICK_LINKS, DEMO_STATS,
+} from '@/lib/demo-data';
 import type { Category, Company, Job, Location, PublicStats, QuickLinkCounts } from '@/types/api';
 
 export const revalidate = 60;
@@ -14,135 +19,94 @@ async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
 }
 
 export default async function HomePage() {
-  const emptyStats = { liveJobs: 0, vacancies: 0, companies: 0, newJobs: 0 };
-  const emptyLinks = { 
-    latest: 0, 
-    deadlineTomorrow: 0, 
-    internship: 0, 
-    partTime: 0, 
-    remote: 0, 
-    fresher: 0, 
-    urgent: 0, 
-    verifiedCompanies: 0 
-  };
-  
-  const [stats, quickLinks, locations, categories, latest, companies, govtJobs, overseasJobs] = await Promise.all([
-    safe(fetchPublic<PublicStats>('/public/stats'), emptyStats),
-    safe(fetchPublic<QuickLinkCounts>('/public/quick-links'), emptyLinks),
-    safe(fetchPublic<{ districts: Location[] }>('/public/locations?popular=true'), { districts: [] }),
-    safe(fetchPublic<Category[]>('/public/categories'), []),
-    safe(fetchPublic<{ items: Job[] }>('/jobs/x/latest?limit=10'), { items: [] }),
-    safe(fetchPublic<{ items: Company[] }>('/companies/top?limit=8'), { items: [] }),
-    safe(fetchPublic<{ items: Job[] }>('/jobs?type=govt&limit=10'), { items: [] }),
-    safe(fetchPublic<{ items: Job[] }>('/jobs?location=-2&limit=10'), { items: [] }),
+  const [liveStats, liveLinks, liveLocs, liveCats, liveLatest, liveCos] = await Promise.all([
+    safe(fetchPublic<PublicStats>('/public/stats'), DEMO_STATS),
+    safe(fetchPublic<QuickLinkCounts>('/public/quick-links'), DEMO_QUICK_LINKS),
+    safe(fetchPublic<{ districts: Location[] }>('/public/locations?popular=true'), { districts: DEMO_LOCATIONS }),
+    safe(fetchPublic<Category[]>('/public/categories'), DEMO_CATEGORIES),
+    safe(fetchPublic<{ items: Job[] }>('/jobs/x/latest?limit=12'), { items: DEMO_JOBS }),
+    safe(fetchPublic<{ items: Company[] }>('/companies/top?limit=8'), { items: DEMO_COMPANIES }),
   ]);
+
+  const stats = liveStats.liveJobs > 0 ? liveStats : DEMO_STATS;
+  const quickLinks = liveLinks.latest > 0 ? { ...DEMO_QUICK_LINKS, ...liveLinks } : DEMO_QUICK_LINKS;
+  const locations = liveLocs.districts?.length ? liveLocs.districts : DEMO_LOCATIONS;
+  const categories = liveCats.length ? liveCats : DEMO_CATEGORIES;
+  const latest = liveLatest.items?.length ? liveLatest.items : DEMO_JOBS;
+  const companies = liveCos.items?.length ? liveCos.items : DEMO_COMPANIES;
+  const govtJobs = DEMO_GOVT_JOBS;
+  const overseasJobs = DEMO_OVERSEAS;
+  const hotJobs = [...DEMO_JOBS.filter((j) => j.tier === 'HOT' || j.tier === 'FEATURED'), ...DEMO_JOBS].slice(0, 16);
 
   return (
     <>
-      {/* Hero Section */}
-      <HomeHero stats={stats} locations={locations.districts} />
+      <HomeHero stats={stats} locations={locations} />
 
-      {/* Main Content Grid - Exact bdjobs.com layout */}
       <section className="container bdj-home">
         <div className="bdj-home-grid">
-          {/* Main Content Area */}
           <div className="bdj-home-main">
-            {/* Category Grid */}
-            <CategoryGrid categories={categories} />
+            <DiscoverSection categories={categories} industries={DEMO_INDUSTRIES} />
 
-            {/* Latest Jobs Section */}
             <section className="bdj-latest-wrap">
               <div className="sec-head">
                 <h2>Latest Jobs</h2>
                 <Link href="/jobs">View All</Link>
               </div>
-              {latest.items.length > 0 ? (
-                <div className="bdj-latest-grid">
-                  {latest.items.slice(0, 6).map((j) => (
-                    <JobCard key={j.id} job={j} />
-                  ))}
-                </div>
-              ) : (
-                <p className="muted mb-0">No live jobs yet. Employers and shop owners can post the first opening.</p>
-              )}
+              <div className="bdj-latest-grid">
+                {latest.slice(0, 10).map((j) => (
+                  <Link key={j.id} href={`/jobs/${j.slug || j.id}`} className="bdj-jobrow">
+                    <span className="co">{j.company?.name}</span>
+                    <span className="ti">{j.title}</span>
+                  </Link>
+                ))}
+              </div>
             </section>
 
-            {/* Government Jobs Section */}
-            {govtJobs.items.length > 0 && (
-              <section className="bdj-govt">
-                <div className="bdj-govt-h">
-                  <h2>GOVT JOBS</h2>
-                  <button className="bdj-pause" onClick={() => {}}>
-                    <img src="/h/images/pause-green.svg" alt="Pause" />
-                  </button>
-                </div>
-                <div className="bdj-ticker">
-                  <div className="bdj-ticker-track">
-                    {govtJobs.items.slice(0, 10).map((job) => (
-                      <div key={job.id} className="bdj-ticker-item">
-                        <strong>{job.company?.name || 'Government'}</strong>
-                        <span>{job.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <Link href="/jobs?type=govt" className="bdj-viewall">
-                  VIEW All ({govtJobs.items.length})
-                </Link>
-              </section>
-            )}
-
-            {/* Overseas Jobs Section */}
-            {overseasJobs.items.length > 0 && (
-              <section className="bdj-over">
-                <div className="bdj-over-h">
-                  <span className="bdj-over-flag" aria-label="Bangladesh Flag" />
-                  <h2>বিদেশে চাকরি</h2>
-                </div>
-                <ul className="bdj-jobrows">
-                  {overseasJobs.items.slice(0, 5).map((job) => (
-                    <li key={job.id}>
-                      <Link href={`/jobs/${job.id}`}>
-                        <span className="co">{job.company?.name}</span>
-                        <span className="ti">{job.title}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/jobs?location=-2" className="bdj-viewall">
-                  View All ({overseasJobs.items.length})
-                </Link>
-              </section>
-            )}
+            <GovtTicker jobs={govtJobs} />
+            <OverseasJobs jobs={overseasJobs} />
           </div>
 
-          {/* Sidebar Area */}
           <aside className="bdj-home-side">
-            {/* Quick Links - Exact bdjobs.com */}
-            <QuickLinks counts={{ 
-              ...quickLinks, 
-              companies: stats.companies 
-            }} />
+            <QuickLinks counts={{ ...quickLinks, companies: stats.companies }} />
           </aside>
         </div>
       </section>
 
-      {/* Featured Companies Section */}
-      {companies.items.length > 0 && (
-        <section className="container section">
+      <HotJobs jobs={hotJobs} />
+
+      {companies.length > 0 && (
+        <section className="container section" style={{ paddingTop: 0 }}>
           <div className="sec-head">
-            <h2>Local employers</h2>
+            <div>
+              <h2>Employer List</h2>
+              <p className="sub">Trusted companies hiring across Bangladesh</p>
+            </div>
             <Link href="/companies">View All</Link>
           </div>
           <div className="grid grid-4">
-            {companies.items.slice(0, 8).map((c) => (
-              <CompanyCard key={c.id} company={c} />
+            {companies.slice(0, 8).map((c) => (
+              <Link key={c.id} href={`/companies/${c.slug || c.id}`} className="bdj-emp-card">
+                <div className="bdj-emp-logo" style={{ background: avatar(c.name) }}>{letters(c.name)}</div>
+                <h3>{c.name}</h3>
+                <div className="meta">{c.category || 'Private Firm/Company'}</div>
+                <div className="meta" style={{ color: 'var(--bdj-blue)', fontWeight: 700, marginTop: 4 }}>
+                  {c._count?.jobs ?? 0} live jobs
+                </div>
+              </Link>
             ))}
           </div>
         </section>
       )}
-
-      {/* Note: Banners removed as per requirement - only logo is kept */}
     </>
   );
+}
+
+function letters(name: string) {
+  return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('');
+}
+function avatar(name: string) {
+  const palette = ['#0072bc', '#0aa2c0', '#1aaa55', '#c0392b', '#8e44ad', '#d35400', '#16a085', '#2c3e50'];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
 }

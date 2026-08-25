@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
  * "Continue with Google" button for candidates / employers / shop-owners.
  * Admins continue to sign in with email + password.
  */
-export function GoogleButton({ label = 'Google দিয়ে চালিয়ে যান' }: { label?: string }) {
+export function GoogleButton({ label = 'Continue with Google' }: { label?: string }) {
   const { loginWithGoogle, firebaseReady } = useAuth();
   const router = useRouter();
   const params = useSearchParams();

@@ -1,2 +1,11 @@
-export const metadata={title:'ব্যবহারের শর্তাবলী'};
-export default function Terms(){return <div className="container section" style={{maxWidth:820}}><h1>ব্যবহারের শর্তাবলী</h1><p>JOBHUB ব্যবহার করে আপনি সত্য ও বৈধ তথ্য প্রদান করতে সম্মত হচ্ছেন। কোনো ভুয়া চাকরি, প্রতারণা বা অনুপযুক্ত আচরণ করা সম্পূর্ণ নিষিদ্ধ।</p></div>;}
+import { CmsPage } from '@/components/cms/CmsPage';
+
+export const metadata = { title: 'Terms & Conditions' };
+
+export default function Terms() {
+  return (
+    <CmsPage title="Terms & Conditions">
+      <p>By using jobhub.com you agree to provide accurate information, not to post fraudulent vacancies, and to treat candidate data as confidential. jobhub.com is not a party to employment contracts between seekers and employers.</p>
+    </CmsPage>
+  );
+}

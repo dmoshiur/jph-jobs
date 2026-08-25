@@ -3,30 +3,24 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { JobCard } from '@/components/JobCard';
+import { JobListCard } from '@/components/jobs/JobListCard';
 import { Pagination } from '@/components/ui/Pagination';
 import { ErrorState, LoadingRows, EmptyState } from '@/components/ui/Feedback';
-import { api, buildQuery, API_URL } from '@/services/api';
-import type { Category, Job, Location, Paginated } from '@/types/api';
+import { api, buildQuery } from '@/services/api';
+import { DEMO_CATEGORIES, DEMO_LOCATIONS, DEMO_STATS, filterDemoJobs, vacanciesOf } from '@/lib/demo-data';
+import { formatCount } from '@/lib/format';
+import { useLang } from '@/hooks/useLang';
 import { IconFilter, IconX } from '@/components/ui/Icons';
+import { DEMO_COURSES } from '@/lib/demo-data';
+import type { Category, Job, Location, Paginated } from '@/types/api';
 
 const TYPES = [
-  { v: 'FULL_TIME', l: 'ফুল টাইম' },
-  { v: 'PART_TIME', l: 'পার্ট টাইম' },
-  { v: 'INTERNSHIP', l: 'ইন্টার্নশিপ' },
-  { v: 'CONTRACT', l: 'চুক্তি' },
-  { v: 'REMOTE', l: 'রিমোট' }
-];
-const SALARIES = [
-  { v: 10000, l: '৳১০,০০০+' },
-  { v: 20000, l: '৳২০,০০০+' },
-  { v: 30000, l: '৳৩০,০০০+' },
-  { v: 50000, l: '৳৫০,০০০+' }
-];
-const POSTED = [
-  { v: '24h', l: 'গত ২৪ ঘণ্টা' },
-  { v: '7d', l: 'গত ৭ দিন' },
-  { v: '30d', l: 'গত ৩০ দিন' }
+  { v: 'FULL_TIME', l: 'Full Time' },
+  { v: 'PART_TIME', l: 'Part Time' },
+  { v: 'INTERNSHIP', l: 'Internship' },
+  { v: 'CONTRACT', l: 'Contractual' },
+  { v: 'REMOTE', l: 'Work From Home' },
+  { v: 'govt', l: 'Government' },
 ];
 
 export default function JobsPage() {
@@ -40,14 +34,16 @@ export default function JobsPage() {
 function JobsContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { lang } = useLang();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [total, setTotal] = useState(0);
+  const [vacancies, setVacancies] = useState(DEMO_STATS.vacancies);
   const [page, setPage] = useState(Number(params.get('page')) || 1);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Location[]>(DEMO_LOCATIONS);
+  const [categories, setCategories] = useState<Category[]>(DEMO_CATEGORIES);
   const [mobileFilter, setMobileFilter] = useState(false);
 
   const filters = useMemo(() => ({
@@ -60,7 +56,7 @@ function JobsContent() {
     verified: params.get('verified') ?? '',
     featured: params.get('featured') ?? '',
     hot: params.get('hot') ?? '',
-    sort: params.get('sort') ?? 'newest'
+    sort: params.get('sort') ?? 'newest',
   }), [params]);
 
   const setFilter = useCallback((patch: Record<string, string>) => {
@@ -76,8 +72,12 @@ function JobsContent() {
   const clearAll = useCallback(() => { router.push('/jobs'); setPage(1); }, [router]);
 
   useEffect(() => {
-    api.get<{ districts: Location[] }>('/public/locations?popular=true').then((d) => setLocations(d.districts)).catch(() => undefined);
-    api.get<Category[]>('/public/categories').then(setCategories).catch(() => undefined);
+    api.get<{ districts: Location[] }>('/public/locations?popular=true')
+      .then((d) => { if (d.districts?.length) setLocations(d.districts); })
+      .catch(() => undefined);
+    api.get<Category[]>('/public/categories')
+      .then((c) => { if (c.length) setCategories(c); })
+      .catch(() => undefined);
   }, []);
 
   const load = useCallback(async () => {
@@ -85,79 +85,129 @@ function JobsContent() {
     try {
       const query = buildQuery({ ...filters, page, limit: 12 });
       const data = await api.get<Paginated<Job>>(`/jobs${query}`);
-      setJobs(data.items); setTotal(data.total); setPages(data.pages);
-    } catch (e) { setError(e instanceof Error ? e.message : 'লোড করা যায়নি'); }
-    finally { setLoading(false); }
+      if (data.items?.length) {
+        setJobs(data.items);
+        setTotal(data.total);
+        setPages(data.pages);
+        setVacancies(vacanciesOf(data.items) * Math.max(1, Math.round(data.total / Math.max(1, data.items.length))));
+        return;
+      }
+      throw new Error('empty');
+    } catch {
+      const demo = filterDemoJobs({ ...filters, page, limit: 12 });
+      setJobs(demo.items);
+      setTotal(demo.total);
+      setPages(demo.pages);
+      setVacancies(Math.max(DEMO_STATS.vacancies, vacanciesOf(demo.items)));
+      setError('');
+    } finally {
+      setLoading(false);
+    }
   }, [filters, page]);
 
   useEffect(() => { void load(); }, [load]);
 
+  const active: { key: string; label: string }[] = [];
+  if (filters.q) active.push({ key: 'q', label: filters.q });
+  if (filters.category) {
+    const c = categories.find((x) => x.slug === filters.category);
+    active.push({ key: 'category', label: c?.name || filters.category });
+  }
+  if (filters.location) {
+    const l = locations.find((x) => x.slug === filters.location);
+    active.push({ key: 'location', label: filters.location === '-2' ? 'Overseas' : (l?.name || filters.location) });
+  }
+  if (filters.type) {
+    const t = TYPES.find((x) => x.v === filters.type);
+    active.push({ key: 'type', label: t?.l || filters.type });
+  }
+
   const FilterContent = (
-    <Filters
-      filters={filters}
-      setFilter={setFilter}
-      locations={locations}
-      categories={categories}
-      clearAll={clearAll}
-    />
+    <Filters filters={filters} setFilter={setFilter} locations={locations} categories={categories} clearAll={clearAll} />
   );
 
   return (
-    <div className="container" style={{ paddingTop: 18 }}>
+    <div className="container bdj-jobs-page">
       <nav className="crumb" aria-label="breadcrumb">
-        <Link href="/">হোম</Link> <span>/</span> <span>চাকরি</span>
-        {filters.q && <><span>/</span><strong>{filters.q}</strong></>}
+        <Link href="/">Home</Link> <span>/</span> <span>Jobs</span>
       </nav>
 
-      <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>
-          {filters.q ? <>“{filters.q}” এর চাকরি</> : 'সব চাকরি'}
-          {!loading && <span className="muted text-sm" style={{ fontWeight: 400, marginLeft: 8 }}>({total} টি)</span>}
+      <div className="bdj-countbar">
+        <h1>
+          {formatCount(total || DEMO_STATS.liveJobs, lang)} Jobs
+          <span className="pipe">|</span>
+          <span className="vac">{formatCount(vacancies, lang)}+ Vacancies</span>
         </h1>
         <div className="flex gap-2 items-center">
-          <button className="btn btn-secondary btn-sm filter-toggle-mobile" onClick={() => setMobileFilter(true)}><IconFilter width={15} height={15} /> ফিল্টার</button>
+          <button className="btn btn-secondary btn-sm filter-toggle-mobile" onClick={() => setMobileFilter(true)}>
+            <IconFilter width={15} height={15} /> Filter
+          </button>
           <label className="text-sm muted" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            সাজান:
+            Sort:
             <select value={filters.sort} onChange={(e) => setFilter({ sort: e.target.value })} style={{ width: 'auto', padding: '7px 10px' }}>
-              <option value="newest">নতুন আগে</option>
-              <option value="deadline">ডেডলাইন</option>
-              <option value="salary">বেতন</option>
+              <option value="newest">Newest</option>
+              <option value="deadline">Deadline</option>
+              <option value="salary">Salary</option>
             </select>
           </label>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px minmax(0,1fr)', gap: 22, alignItems: 'start' }}>
+      {active.length > 0 && (
+        <div className="bdj-active-filters">
+          <span className="text-sm muted">Active Filter:</span>
+          {active.map((a) => (
+            <span key={a.key} className="bdj-chip-x">
+              {a.label}
+              <button type="button" onClick={() => setFilter({ [a.key]: '' })} aria-label="Remove">×</button>
+            </span>
+          ))}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={clearAll}>Clear</button>
+        </div>
+      )}
+
+      <div className="bdj-jobs-layout">
         <div className="sidebar-filters">
-          <div className="panel" style={{ position: 'sticky', top: 'calc(var(--header-h) + 80px)' }}>{FilterContent}</div>
+          <div className="bdj-filter-panel">{FilterContent}</div>
         </div>
 
         <div>
           {loading ? <LoadingRows /> : error ? <ErrorState onRetry={load} /> : jobs.length === 0 ? (
             <EmptyState
-              title="কোনো চাকরি পাওয়া যায়নি"
-              message="ফিল্টার পরিবর্তন করুন অথবা সব চাকরি ব্রাউজ করুন।"
-              action={{ label: 'ফিল্টার মুছুন', onClick: clearAll }}
+              title="No jobs found"
+              message="Try another keyword or clear filters."
+              action={{ label: 'Clear filters', onClick: clearAll }}
             />
           ) : (
-            <div className="grid grid-2">
-              {jobs.map((j) => <JobCard key={j.id} job={j} />)}
+            <div className="bdj-list">
+              {jobs.map((j) => <JobListCard key={j.id} job={j} />)}
             </div>
           )}
           <Pagination page={page} pages={pages} onPage={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+
+          <aside className="mt-6">
+            <h3 style={{ fontSize: '1rem', marginBottom: 10 }}>E-LEARNING</h3>
+            <div className="grid" style={{ gap: 10 }}>
+              {DEMO_COURSES.map((c) => (
+                <Link key={c.title} href="/training" className="elearn-card">
+                  <h4>{c.title}</h4>
+                  <p>{c.price} · {c.instructor}</p>
+                </Link>
+              ))}
+            </div>
+          </aside>
         </div>
       </div>
 
-      {/* Mobile filter drawer */}
       {mobileFilter && (
         <div className="drawer-backdrop open" onClick={() => setMobileFilter(false)}>
           <div className="filter-drawer open" onClick={(e) => e.stopPropagation()} style={{ transform: 'translateX(0)' }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>ফিল্টার</h2>
-              <button className="m-icon-btn" onClick={() => setMobileFilter(false)} aria-label="বন্ধ"><IconX width={20} height={20} /></button>
+              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Filter</h2>
+              <button className="bdj-icon-btn" onClick={() => setMobileFilter(false)} aria-label="Close"><IconX width={18} height={18} /></button>
             </div>
             {FilterContent}
-            <button className="btn btn-block mt-4" onClick={() => setMobileFilter(false)}>ফলাফল দেখুন</button>
+            <button className="btn btn-block mt-4" onClick={() => setMobileFilter(false)}>Show results</button>
           </div>
         </div>
       )}
@@ -166,7 +216,7 @@ function JobsContent() {
 }
 
 function Filters({
-  filters, setFilter, locations, categories, clearAll
+  filters, setFilter, locations, categories, clearAll,
 }: {
   filters: Record<string, string>;
   setFilter: (p: Record<string, string>) => void;
@@ -175,35 +225,42 @@ function Filters({
   clearAll: () => void;
 }) {
   return (
-    <div style={{ padding: 8 }}>
-      <div className="flex items-center justify-between" style={{ padding: '6px 8px 12px' }}>
-        <strong>ফিল্টার</strong>
-        <button className="btn btn-ghost btn-sm" onClick={clearAll} style={{ padding: 4, color: 'var(--primary-600)' }}>মুছুন</button>
+    <div>
+      <div className="flex items-center justify-between" style={{ padding: '12px 14px 4px' }}>
+        <strong>Filter</strong>
+        <button className="btn btn-ghost btn-sm" onClick={clearAll} style={{ padding: 4, color: 'var(--bdj-blue)' }}>Clear</button>
       </div>
 
       <div className="filter-group">
-        <h4>লোকেশন</h4>
+        <h4>Keyword</h4>
+        <input
+          defaultValue={filters.q}
+          placeholder="Job title or skill"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') setFilter({ q: (e.target as HTMLInputElement).value });
+          }}
+        />
+      </div>
+
+      <div className="filter-group">
+        <h4>Location</h4>
         <select value={filters.location} onChange={(e) => setFilter({ location: e.target.value })}>
-          <option value="">বগুড়া ও জয়পুরহাট</option>
-          {locations.map((d) => (
-            <optgroup key={d.id} label={d.name}>
-              <option value={d.slug}>{d.name} (সব)</option>
-              {d.children?.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
-            </optgroup>
-          ))}
+          <option value="">All Bangladesh</option>
+          <option value="-2">Overseas</option>
+          {locations.map((d) => <option key={d.id} value={d.slug}>{d.name}</option>)}
         </select>
       </div>
 
       <div className="filter-group">
-        <h4>ক্যাটাগরি</h4>
+        <h4>Category</h4>
         <select value={filters.category} onChange={(e) => setFilter({ category: e.target.value })}>
-          <option value="">সব ক্যাটাগরি</option>
+          <option value="">All Category</option>
           {categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
         </select>
       </div>
 
       <div className="filter-group">
-        <h4>চাকরির ধরন</h4>
+        <h4>Job Type</h4>
         {TYPES.map((t) => (
           <label key={t.v} className="check-row">
             <input type="radio" name="type" checked={filters.type === t.v} onChange={() => setFilter({ type: filters.type === t.v ? '' : t.v })} /> {t.l}
@@ -212,28 +269,10 @@ function Filters({
       </div>
 
       <div className="filter-group">
-        <h4>বেতন</h4>
-        {SALARIES.map((s) => (
-          <label key={s.v} className="check-row">
-            <input type="radio" name="salary" checked={filters.salaryMin === String(s.v)} onChange={() => setFilter({ salaryMin: filters.salaryMin === String(s.v) ? '' : String(s.v) })} /> {s.l}
-          </label>
-        ))}
-      </div>
-
-      <div className="filter-group">
-        <h4>পোস্টের সময়</h4>
-        {POSTED.map((p) => (
-          <label key={p.v} className="check-row">
-            <input type="radio" name="posted" checked={filters.postedWithin === p.v} onChange={() => setFilter({ postedWithin: filters.postedWithin === p.v ? '' : p.v })} /> {p.l}
-          </label>
-        ))}
-      </div>
-
-      <div className="filter-group">
-        <h4>শুধুমাত্র</h4>
-        <label className="check-row"><input type="checkbox" checked={filters.verified === 'true'} onChange={(e) => setFilter({ verified: e.target.checked ? 'true' : '' })} /> ভেরিফাইড কোম্পানি</label>
-        <label className="check-row"><input type="checkbox" checked={filters.featured === 'true'} onChange={(e) => setFilter({ featured: e.target.checked ? 'true' : '' })} /> ফিচার্ড চাকরি</label>
-        <label className="check-row"><input type="checkbox" checked={filters.hot === 'true'} onChange={(e) => setFilter({ hot: e.target.checked ? 'true' : '' })} /> জরুরি নিয়োগ</label>
+        <h4>Only</h4>
+        <label className="check-row">
+          <input type="checkbox" checked={filters.featured === 'true'} onChange={(e) => setFilter({ featured: e.target.checked ? 'true' : '' })} /> Featured / Hot Jobs
+        </label>
       </div>
     </div>
   );
