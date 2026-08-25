@@ -6,36 +6,124 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ToastProvider } from '@/components/ui/Toast';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.jobhub.test';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.jobhub.com.bd';
 
+// Bdjobs.com exact metadata structure
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Largest Job Site in Bangladesh, Search Jobs | jobhub', template: '%s | jobhub' },
-  description: 'Find the right job in Bangladesh. Search live jobs, vacancies, companies and new jobs across Bogura, Joypurhat and all over Bangladesh.',
-  keywords: ['Bangladesh jobs', 'bdjobs', 'jobhub', 'Bogura job', 'Joypurhat job', 'চাকরি', 'job portal Bangladesh'],
+  title: { 
+    default: 'Largest Job Site in Bangladesh, Search Jobs | jobhub', 
+    template: '%s | jobhub'
+  },
+  description: 'Find the right job in Bangladesh. Search live jobs, vacancies, companies and new jobs across all over Bangladesh.',
+  keywords: [
+    'Bangladesh jobs', 'bdjobs', 'jobhub', 'চাকরি', 'job portal Bangladesh',
+    'career', 'employment', 'recruitment', 'job search', 'vacancy'
+  ],
+  authors: [{ name: 'jobhub' }],
+  generator: 'jobhub - Largest Job Site in Bangladesh',
+  applicationName: 'jobhub',
+  referrer: 'origin-when-cross-origin',
+  creator: 'jobhub',
+  publisher: 'jobhub',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     title: 'Largest Job Site in Bangladesh, Search Jobs | jobhub',
     description: 'Find the right job. Live jobs, vacancies and companies in one place.',
-    type: 'website',
+    url: SITE_URL,
     siteName: 'jobhub',
-    locale: 'en_US'
+    images: [
+      {
+        url: `${SITE_URL}/images/logo_bdesh.svg`,
+        width: 200,
+        height: 60,
+        alt: 'jobhub Logo',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'jobhub', description: 'Find the right job in Bangladesh.' },
-  robots: { index: true, follow: true }
+  twitter: {
+    card: 'summary_large_image',
+    title: 'jobhub - Largest Job Site in Bangladesh',
+    description: 'Find the right job in Bangladesh. Search live jobs, vacancies, companies.',
+    images: [`${SITE_URL}/images/logo_bdesh.svg`],
+    creator: '@jobhub',
+    site: '@jobhub',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'jobhub',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/site.webmanifest',
 };
 
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#00a0c6' };
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0066cc',
+  colorScheme: 'light',
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Google Fonts - Same as bdjobs.com */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
+        
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        
+        {/* Meta Tags for SEO */}
+        <meta name="copyright" content="jobhub" />
+        <meta name="language" content="English, Bengali" />
+        <meta name="country" content="Bangladesh" />
+        <meta name="coverage" content="Worldwide" />
+        <meta name="distribution" content="Global" />
+        <meta name="rating" content="General" />
+        
+        {/* Open Graph Additional */}
+        <meta property="og:image:alt" content="jobhub - Find Your Dream Job" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        
+        {/* Twitter Additional */}
+        <meta name="twitter:site" content="@jobhub" />
+        <meta name="twitter:creator" content="@jobhub" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href={SITE_URL} />
+        
+        {/* Preload critical resources */}
+        <link rel="preload" href="/fonts/roboto.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body>
         <LangProvider>
@@ -47,6 +135,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ToastProvider>
           </AuthProvider>
         </LangProvider>
+        
+        {/* Back to top button */}
+        <button 
+          id="back-to-top" 
+          className="bdj-back-to-top"
+          aria-label="Back to top"
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'var(--bdj-blue)',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'none',
+            zIndex: 100,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            fontSize: '24px',
+            transition: 'opacity 0.3s, visibility 0.3s',
+          }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          ↑
+        </button>
+        
+        {/* Live chat widget placeholder */}
+        <div id="live-chat-widget" style={{ position: 'fixed', bottom: '20px', right: '80px', zIndex: 100 }} />
       </body>
     </html>
   );

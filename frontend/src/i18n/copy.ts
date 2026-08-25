@@ -2,23 +2,35 @@ export type Lang = 'en' | 'bn';
 
 export const COPY = {
   en: {
+    // Brand
     brand: 'jobhub',
-    elearning: 'Training',
-    tender: 'Resources',
-    recruiter: 'Employer',
+    siteName: 'jobhub',
+    
+    // Navigation
+    elearning: 'E-LEARNING',
+    tender: 'TENDER/ EOI',
+    recruiter: 'Recruiter',
     postJob: 'Post a Job',
+    
+    // Header
     contactUs: 'Contact Us',
-    downloadApp: 'Download Jobhub App',
-    signIn: 'Sign in',
-    signUp: 'Sign up',
+    signIn: 'Sign In',
+    signUp: 'Sign Up',
+    menu: 'Menu',
+    
+    // Hero
     findJob: 'Find The Right Job',
     liveJobs: 'LIVE JOBS',
     vacancies: 'VACANCIES',
     companies: 'COMPANIES',
     newJobs: 'NEW JOBS',
+    
+    // Search
     search: 'Search',
-    searchPh: 'Job title, skill or company in Bogura or Joypurhat',
-    allLocations: 'Bogura & Joypurhat',
+    searchPh: 'Job title, skill or company',
+    allLocations: 'All Locations',
+    
+    // Quick Links
     quickLinks: 'QUICK LINKS',
     employerList: 'Employer List',
     newJobsLink: 'New Jobs',
@@ -26,109 +38,231 @@ export const COPY = {
     internship: 'Internship Opportunity',
     contractual: 'Contractual Jobs',
     partTime: 'Part time Jobs',
-    overseas: 'Shop jobs',
+    overseas: 'Overseas Jobs',
     wfh: 'Work From Home',
     fresher: 'Fresher Jobs',
-    discover: 'Jobs in Bogura & Joypurhat by category',
+    newBadge: 'new',
+    
+    // Categories
+    discover: 'Discover Jobs Across Popular Category & Industry',
     category: 'Category',
     industry: 'Industry',
     more: 'More',
     less: 'Less',
+    
+    // Government Jobs
     govtJobs: 'GOVT JOBS',
-    viewAll: 'VIEW ALL',
+    viewAll: 'VIEW All',
+    
+    // Overseas
     overseasTitle: 'Overseas Jobs',
     jobsTab: 'JOBS',
     countryTab: 'Country',
+    
+    // Footer
     needSupport: 'Need any support?',
     contactHours: 'Our Contact Centre is available from',
-    hours: '9 am to 8 pm (Sat to Thurs).',
+    hours: '-9 am to 8 pm (Sat to Thurs).',
     aboutUs: 'About Us',
+    aboutBdjobs: 'About Bdjobs.com',
+    terms: 'Terms & Conditions',
+    privacy: 'Privacy Policy',
+    feedback: 'Feedback',
+    accessibility: 'Accessibility Statement',
     jobSeekers: 'Job Seekers',
+    bdjobsPro: 'Bdjobs Pro',
+    myPanel: 'My Bdjobs Panel',
+    features: 'List of Features',
+    videoGuides: 'Video Guides',
+    faq: 'FAQ',
+    recruiter: 'Recruiter',
+    createAccount: 'Create Account',
+    products: 'Products/Service',
     downloadSeeker: 'Download Job Seeker App',
-    downloadSeekerSub: 'Get real-time job updates on our app.',
+    getRealtime: 'Get real-time job updates on our app.',
     downloadEmployer: 'Download Employer App',
-    downloadEmployerSub: 'Post jobs and manage hiring anytime.',
+    postJobs: 'Post jobs and manage hiring anytime.',
     partners: 'Our Valuable Partners',
+    followUs: 'Follow Us',
     stayConnected: 'Stay connected with us',
-    aboutLinks: ['About Jobhub', 'Terms & Conditions', 'Privacy Policy', 'Feedback', 'Contact Us', 'Help'],
-    seekerLinks: ['My Jobhub Panel', 'Saved jobs', 'CV builder', 'Job alerts', 'FAQ'],
-    recruiterLinks: ['Create Account', 'Post a Job', 'Shop owner', 'FAQ'],
+    
+    // Footer Links
+    aboutLinks: ['About Bdjobs.com', 'Terms & Conditions', 'Privacy Policy', 'Feedback', 'Contact Us', 'Accessibility Statement'],
+    seekerLinks: ['Bdjobs Pro', 'My Bdjobs Panel', 'List of Features', 'Video Guides', 'FAQ'],
+    recruiterLinks: ['Create Account', 'Products/Service', 'Post a Job', 'FAQ'],
+    
+    // Navigation
     jobs: 'Jobs',
     companiesNav: 'Companies',
-    businesses: 'Shops',
+    businesses: 'Businesses',
     career: 'Career',
     training: 'Training',
     help: 'Help',
+    
+    // User
     dashboard: 'Dashboard',
     logout: 'Logout',
     login: 'Login',
     register: 'Create account',
-    menu: 'Menu',
-    newBadge: 'new'
+    
+    // Location
+    location: 'Bangladesh',
+    
+    // Buttons
+    applyNow: 'Apply Now',
+    save: 'Save',
+    share: 'Share',
+    viewDetails: 'View Details',
+    readMore: 'Read More',
+    
+    // Job Details
+    jobDetails: 'Job Details',
+    requirements: 'Requirements',
+    responsibilities: 'Responsibilities & Context',
+    skills: 'Skills & Expertise',
+    compensation: 'Compensation & Other Benefits',
+    companyInfo: 'Company Information',
+    
+    // Pagination
+    previous: 'Previous',
+    next: 'Next',
+    
+    // Messages
+    noJobs: 'No jobs found',
+    noCompanies: 'No companies found',
+    loading: 'Loading...',
+    error: 'Error loading data',
   },
   bn: {
+    // Brand
     brand: 'jobhub',
-    elearning: 'ট্রেনিং',
-    tender: 'রিসোর্স',
+    siteName: 'jobhub',
+    
+    // Navigation
+    elearning: 'ই-লার্নিং',
+    tender: 'টেন্ডার/ ইওআই',
     recruiter: 'নিয়োগদাতা',
     postJob: 'চাকরি পোস্ট করুন',
+    
+    // Header
     contactUs: 'যোগাযোগ',
-    downloadApp: 'জবহাব অ্যাপ ডাউনলোড',
     signIn: 'সাইন ইন',
     signUp: 'সাইন আপ',
-    findJob: 'বগুড়া ও জয়পুরহাটে চাকরি খুঁজুন',
+    menu: 'মেনু',
+    
+    // Hero
+    findJob: 'সঠিক চাকরি খুঁজুন',
     liveJobs: 'লাইভ চাকরি',
     vacancies: 'শূন্যপদ',
     companies: 'কোম্পানি',
     newJobs: 'নতুন চাকরি',
+    
+    // Search
     search: 'খুঁজুন',
-    searchPh: 'পদের নাম, দক্ষতা বা কোম্পানি (বগুড়া / জয়পুরহাট)',
-    allLocations: 'বগুড়া ও জয়পুরহাট',
+    searchPh: 'পদের নাম, দক্ষতা বা কোম্পানি',
+    allLocations: 'সব লোকেশন',
+    
+    // Quick Links
     quickLinks: 'কুইক লিংক',
-    employerList: 'এমপ্লয়ার তালিকা',
+    employerList: 'নিয়োগদাতা তালিকা',
     newJobsLink: 'নতুন চাকরি',
-    deadlineTomorrow: 'আগামীকাল শেষ',
+    deadlineTomorrow: 'আগামীকাল ডেডলাইন',
     internship: 'ইন্টার্নশিপ সুযোগ',
     contractual: 'চুক্তিভিত্তিক চাকরি',
     partTime: 'পার্ট টাইম চাকরি',
-    overseas: 'দোকানের চাকরি',
-    wfh: 'ওয়ার্ক ফ্রম হোম',
+    overseas: 'বিদেশে চাকরি',
+    wfh: 'বাসা থেকে চাকরি',
     fresher: 'ফ্রেশার চাকরি',
-    discover: 'বগুড়া ও জয়পুরহাটের ক্যাটাগরি অনুযায়ী চাকরি',
+    newBadge: 'নতুন',
+    
+    // Categories
+    discover: 'পপুলার ক্যাটাগরি ও ইন্ডাস্ট্রি অনুযায়ী চাকরি',
     category: 'ক্যাটাগরি',
     industry: 'ইন্ডাস্ট্রি',
-    more: 'আরও',
-    less: 'কম',
+    more: 'আরও দেখুন',
+    less: 'কম দেখুন',
+    
+    // Government Jobs
     govtJobs: 'সরকারি চাকরি',
     viewAll: 'সব দেখুন',
+    
+    // Overseas
     overseasTitle: 'বিদেশে চাকরি',
     jobsTab: 'চাকরি',
     countryTab: 'দেশ',
+    
+    // Footer
     needSupport: 'সাহায্য লাগবে?',
     contactHours: 'আমাদের কন্টাক্ট সেন্টার খোলা',
     hours: 'সকাল ৯টা – রাত ৮টা (শনি–বৃহস্পতি)।',
     aboutUs: 'আমাদের সম্পর্কে',
+    aboutBdjobs: 'বিডিজবস.কম সম্পর্কে',
+    terms: 'শর্তাবলী',
+    privacy: 'গোপনীয়তা নীতি',
+    feedback: 'মতামত',
+    accessibility: 'অ্যাক্সেসিবিলিটি স্টেটমেন্ট',
     jobSeekers: 'চাকরি প্রার্থী',
+    bdjobsPro: 'বিডিজবস প্রো',
+    myPanel: 'মাই বিডিজবস প্যানেল',
+    features: 'ফিচারসমূহ',
+    videoGuides: 'ভিডিও গাইড',
+    faq: 'প্রশ্নোত্তর',
+    recruiter: 'নিয়োগদাতা',
+    createAccount: 'অ্যাকাউন্ট খুলুন',
+    products: 'পণ্য/সেবা',
     downloadSeeker: 'জব সিকার অ্যাপ ডাউনলোড',
-    downloadSeekerSub: 'রিয়েল-টাইম চাকরি আপডেট পান।',
+    getRealtime: 'রিয়েল-টাইম চাকরি আপডেট পান।',
     downloadEmployer: 'এমপ্লয়ার অ্যাপ ডাউনলোড',
-    downloadEmployerSub: 'যেকোনো সময় চাকরি পোস্ট ও নিয়োগ পরিচালনা করুন।',
+    postJobs: 'যেকোনো সময় চাকরি পোস্ট ও নিয়োগ পরিচালনা করুন।',
     partners: 'আমাদের মূল্যবান পার্টনার',
+    followUs: 'আমাদের অনুসরণ করুন',
     stayConnected: 'আমাদের সাথে থাকুন',
-    aboutLinks: ['জবহাব সম্পর্কে', 'শর্তাবলী', 'গোপনীয়তা নীতি', 'মতামত', 'যোগাযোগ', 'সাহায্য'],
-    seekerLinks: ['মাই জবহাব প্যানেল', 'সংরক্ষিত চাকরি', 'সিভি তৈরি', 'চাকরির এলার্ট', 'প্রশ্নোত্তর'],
-    recruiterLinks: ['অ্যাকাউন্ট খুলুন', 'চাকরি পোস্ট করুন', 'দোকান মালিক', 'প্রশ্নোত্তর'],
+    
+    // Footer Links
+    aboutLinks: ['বিডিজবস.কম সম্পর্কে', 'শর্তাবলী', 'গোপনীয়তা নীতি', 'মতামত', 'যোগাযোগ', 'অ্যাক্সেসিবিলিটি স্টেটমেন্ট'],
+    seekerLinks: ['বিডিজবস প্রো', 'মাই বিডিজবস প্যানেল', 'ফিচারসমূহ', 'ভিডিও গাইড', 'প্রশ্নোত্তর'],
+    recruiterLinks: ['অ্যাকাউন্ট খুলুন', 'পণ্য/সেবা', 'চাকরি পোস্ট করুন', 'প্রশ্নোত্তর'],
+    
+    // Navigation
     jobs: 'চাকরি',
     companiesNav: 'কোম্পানি',
-    businesses: 'দোকান',
+    businesses: 'ব্যবসা প্রতিষ্ঠান',
     career: 'ক্যারিয়ার',
     training: 'ট্রেনিং',
     help: 'সাহায্য',
+    
+    // User
     dashboard: 'ড্যাশবোর্ড',
     logout: 'লগআউট',
     login: 'লগইন',
     register: 'নিবন্ধন',
-    menu: 'মেনু',
-    newBadge: 'নতুন'
+    
+    // Location
+    location: 'বাংলাদেশ',
+    
+    // Buttons
+    applyNow: 'আবেদন করুন',
+    save: 'সংরক্ষণ করুন',
+    share: 'শেয়ার করুন',
+    viewDetails: 'বিস্তারিত দেখুন',
+    readMore: 'আরও পড়ুন',
+    
+    // Job Details
+    jobDetails: 'চাকরির বিবরণ',
+    requirements: 'চাহিদা',
+    responsibilities: 'দায়িত্ব ও প্রেক্ষাপট',
+    skills: 'দক্ষতা ও অভিজ্ঞতা',
+    compensation: 'বেতন ও অন্যান্য সুবিধা',
+    companyInfo: 'কোম্পানির তথ্য',
+    
+    // Pagination
+    previous: 'পূর্ববর্তী',
+    next: 'পরবর্তী',
+    
+    // Messages
+    noJobs: 'কোন চাকরি খুঁজে পাওয়া যায়নি',
+    noCompanies: 'কোন কোম্পানি খুঁজে পাওয়া যায়নি',
+    loading: 'লোড হচ্ছে...',
+    error: 'ডাটা লোড করতে ত্রুটি হয়েছে',
   }
 } as const;
