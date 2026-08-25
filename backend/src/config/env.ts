@@ -54,10 +54,13 @@ export const env = parsed.data;
 export const isProduction = env.NODE_ENV === 'production';
 export const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean);
 
+// A Realtime Database URL (and the browser's NEXT_PUBLIC_FIREBASE_* values) is
+// not an Admin SDK credential. Keep this check aligned with admin.ts so startup
+// does not claim Firebase is configured and fail later with an opaque ADC error.
 export const isFirebaseConfigured = Boolean(
-  env.FIREBASE_SERVICE_ACCOUNT ||
-    (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) ||
-    env.FIRESTORE_EMULATOR_HOST
+  env.FIRESTORE_EMULATOR_HOST ||
+    env.FIREBASE_SERVICE_ACCOUNT?.trim() ||
+    (env.FIREBASE_PROJECT_ID?.trim() && env.FIREBASE_CLIENT_EMAIL?.trim() && env.FIREBASE_PRIVATE_KEY?.trim())
 );
 
 if (isProduction && !isFirebaseConfigured) {

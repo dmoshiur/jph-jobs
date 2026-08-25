@@ -50,9 +50,13 @@ npm run dev
 
 Backend default: `http://localhost:3001/api/v1`
 
-Required local backend variables are in `backend/.env.example`. Provide a Firebase
-service account (or use the Firebase Emulator Suite) and a Cloudinary account.
-Firestore is schemaless — there are no migrations to run.
+Required local backend variables are in `backend/.env.example`. The backend needs
+Firebase Admin credentials: either `FIREBASE_SERVICE_ACCOUNT` (the downloaded
+service-account JSON) or all three of `FIREBASE_PROJECT_ID`,
+`FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`. `FIREBASE_DATABASE_URL` and
+the frontend `NEXT_PUBLIC_FIREBASE_*` values are not Admin credentials. You can
+instead use the Firebase Emulator Suite. Firestore is schemaless — there are no
+migrations to run.
 
 ### 2. Frontend
 

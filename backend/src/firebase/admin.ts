@@ -19,18 +19,23 @@ let app: App | undefined;
 
 function loadServiceAccount() {
   // 1) Inline JSON (FIREBASE_SERVICE_ACCOUNT) — handy for serverless/Vercel.
-  if (env.FIREBASE_SERVICE_ACCOUNT) {
+  if (env.FIREBASE_SERVICE_ACCOUNT?.trim()) {
     try {
-      return JSON.parse(env.FIREBASE_SERVICE_ACCOUNT);
-    } catch {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT is not valid JSON');
+      const account = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT);
+      if (!account.project_id || !account.client_email || !account.private_key) {
+        throw new Error('missing project_id, client_email or private_key');
+      }
+      return account;
+    } catch (error) {
+      const detail = error instanceof Error ? `: ${error.message}` : '';
+      throw new Error(`FIREBASE_SERVICE_ACCOUNT is invalid${detail}`);
     }
   }
   // 2) Discrete fields (FIREBASE_PROJECT_ID / CLIENT_EMAIL / PRIVATE_KEY).
-  if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) {
+  if (env.FIREBASE_PROJECT_ID?.trim() && env.FIREBASE_CLIENT_EMAIL?.trim() && env.FIREBASE_PRIVATE_KEY?.trim()) {
     return {
-      projectId: env.FIREBASE_PROJECT_ID,
-      clientEmail: env.FIREBASE_CLIENT_EMAIL,
+      projectId: env.FIREBASE_PROJECT_ID.trim(),
+      clientEmail: env.FIREBASE_CLIENT_EMAIL.trim(),
       // Support escaped newlines from single-line .env values.
       privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
     };
@@ -58,9 +63,17 @@ export function getFirebaseApp(): App {
   } else if (env.FIRESTORE_EMULATOR_HOST || env.FIREBASE_AUTH_EMULATOR_HOST) {
     // Emulator mode: credentials are not required.
     app = initializeApp({ projectId: projectId ?? 'demo-jph-jobs', databaseURL });
-  } else {
-    // Fall back to Application Default Credentials (GCP / gcloud auth).
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    // Explicitly opt in to ADC (for GCP, gcloud, or a service-account file).
+    // Do not silently fall back: that produces the misleading "Unable to detect a
+    // Project Id" error when a developer only configured FIREBASE_DATABASE_URL.
     app = initializeApp({ credential: applicationDefault(), databaseURL, projectId });
+  } else {
+    throw new Error(
+      'Firebase Admin credentials are missing. Set FIREBASE_SERVICE_ACCOUNT or ' +
+      'FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY in backend/.env. ' +
+      'FIREBASE_DATABASE_URL alone is not an Admin SDK credential.'
+    );
   }
 
   return app;

@@ -14,7 +14,7 @@
  */
 import { prisma } from '../src/database/prisma.js';
 import { slugify } from '../src/utils/slug.js';
-import { env } from '../src/config/env.js';
+import { isFirebaseConfigured } from '../src/config/env.js';
 import { bootstrap } from '../src/config/bootstrap.js';
 import { createAuthUser } from '../src/auth/user.js';
 
@@ -48,6 +48,14 @@ const PACKAGES = [
 ];
 
 async function seed() {
+  if (!isFirebaseConfigured) {
+    throw new Error(
+      'Cannot seed Firestore: Firebase Admin credentials are missing. Set FIREBASE_SERVICE_ACCOUNT or ' +
+      'FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY in backend/.env. ' +
+      'FIREBASE_DATABASE_URL alone is not enough; use FIRESTORE_EMULATOR_HOST for emulator mode.'
+    );
+  }
+
   console.log('Bootstrapping roles, permissions and root admin...');
   await bootstrap();
 
